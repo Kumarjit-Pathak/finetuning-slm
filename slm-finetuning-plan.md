@@ -1,6 +1,6 @@
 # SLM Fine-Tuning: Comprehensive Tutorial & Implementation Plan
 
-> **Goal**: Build an academia-ready, end-to-end Small Language Model fine-tuning tutorial covering 10+ techniques (basic → advanced, including DoRA), with 20 Jupyter notebooks, fun + novel industry use cases, dedicated safety/responsible-finetuning phase, evaluation theory depth, dataset design guidance, an emerging methods appendix, and an interactive GitHub Pages site with infographics — all runnable on Apple M4 Max.
+> **Goal**: Build an academia-ready, end-to-end Small Language Model fine-tuning tutorial covering 10+ techniques (basic → advanced, including DoRA), with 20 Jupyter notebooks, fun + novel industry use cases, dedicated safety/responsible-finetuning phase, evaluation theory depth, dataset design guidance, an emerging methods appendix, and an interactive GitHub Pages site with infographics — runnable on Apple Silicon (M1–M4), Google Colab (free tier), or any system with a 6GB+ GPU.
 
 ---
 
@@ -32,37 +32,67 @@
 
 ## Target Models
 
+### Primary Models (Open — No Token Required)
+
 | Model | Parameters | Role | Rationale |
 |---|---|---|---|
-| **SmolLM2-135M** | 135M | Quick demos, distillation student | Instant iteration; fits easily in memory |
+| **SmolLM2-135M** | 135M | Quick demos, distillation student, 6GB GPU friendly | Instant iteration; fits on any hardware |
 | **SmolLM2-360M** | 360M | Main tutorials | Best speed/capability balance for teaching |
 | **Qwen2.5-1.5B-Instruct** | 1.5B | Quality-critical demos | Better reasoning for code review, clinical tasks |
-| **Qwen2.5-3B-Instruct** | 3B | Distillation teacher | Large enough to teach, small enough for M4 Max |
+| **Qwen2.5-3B-Instruct** | 3B | Distillation teacher | Large enough to teach, small enough for 36GB+ systems |
+
+### Alternative Models (Gated — HuggingFace Token Required)
+
+| Model | Parameters | License | Why Include |
+|---|---|---|---|
+| **Llama 3.2 1B** | 1B | Llama 3.2 Community | Strong quality/size ratio; popular in industry |
+| **Llama 3.2 3B** | 3B | Llama 3.2 Community | Best reasoning at 3B scale |
+| **Gemma 2 2B** | 2B | Gemma License | Excellent instruction following; Google ecosystem |
+
+> **Note**: The tutorial works end-to-end with open models only. Gated models are optional alternatives — students who accept the license on HuggingFace can swap them in for any notebook. See README for HF token setup instructions.
 
 ---
 
 ## Hardware & Environment
 
-### Apple M4 Max Considerations
+### Supported Hardware Tiers
+
+| Tier | Hardware | What Works |
+|---|---|---|
+| **6 GB GPU** | RTX 3060, GTX 1660, Colab T4 (free) | SmolLM2-135M (all techniques), 360M/1.5B (QLoRA only) |
+| **16 GB** | Apple M1/M2 (16GB), RTX 4060 Ti | SmolLM2-360M (LoRA/DoRA), Qwen2.5-1.5B (QLoRA) |
+| **36 GB** | Apple M3/M4 (36GB), RTX 3090 | All notebooks including Qwen2.5-1.5B LoRA |
+| **64+ GB** | Apple M-series (64GB+), A100 | Everything at full precision incl. Qwen2.5-3B distillation |
+
+> **Design principle**: SmolLM2-135M runs ALL techniques even on 6GB, so no student is locked out of any concept. Each notebook includes a "low-resource" config fallback.
+
+### Apple M4 Max Specifics (Primary Development Machine)
 
 - **PyTorch MPS backend** for GPU acceleration via Metal Performance Shaders
 - **Unified memory architecture** (up to 128GB) — significant advantage over discrete GPU setups for loading larger models
 - `bitsandbytes >=0.49.2` (already installed) has Apple Silicon 4-bit quantization support — verify at runtime; fallback to fp16 LoRA if unstable
-- All training configurations tuned for **~36–64 GB unified memory envelope**
 - MLX framework available as alternative for native Apple Silicon fine-tuning
 
-### Python Environment
+### Google Colab Compatibility
+
+- Each notebook includes a Colab setup cell at the top (`!pip install ...`)
+- Runtime: T4 GPU (15GB VRAM) — sufficient for all techniques up to 3B QLoRA
+- Students mount Google Drive to persist checkpoints across sessions
+- Session limit: ~12 hours — notebooks save checkpoints at each epoch
+
+### Python Environment (Local)
 
 ```
 Primary:  ~/python-envs/agentic-slm/   (Python 3.11)
+Alternative: project-local .venv via `uv sync` (see setup.sh)
 ```
 
 **Already installed**: `transformers`, `peft`, `trl`, `bitsandbytes`, `datasets`, `accelerate`, `evaluate`, `rouge-score`, `bert-score`, `safetensors`, `tokenizers`, `scikit-learn`
 
-**To add**: `matplotlib`, `plotly`, `jinja2` (for visualization and HTML templating)
+**To add**: `plotly` (interactive charts)
 
 ```bash
-cd ~/python-envs/agentic-slm && UV_SYSTEM_CERTS=1 uv add matplotlib plotly jinja2
+cd ~/python-envs/agentic-slm && UV_SYSTEM_CERTS=1 uv add plotly
 ```
 
 ---
