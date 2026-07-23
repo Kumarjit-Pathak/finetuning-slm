@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.venv/
+venv/
+env/
+*.egg-info/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# Model outputs & checkpoints (large files)
+outputs/
+*.bin
+*.safetensors
+*.gguf
+*.pt
+*.pth
+
+# HuggingFace cache (don't commit downloaded models)
+.cache/
+
+# Environment
+.env
+.env.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# uv
+uv.lock

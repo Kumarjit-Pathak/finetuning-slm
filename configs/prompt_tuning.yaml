@@ -1,0 +1,24 @@
+# Prompt Tuning Configuration
+model:
+  name: "HuggingFaceTB/SmolLM2-360M-Instruct"
+  torch_dtype: "float16"
+
+prompt_tuning:
+  num_virtual_tokens: 20
+  prompt_tuning_init: "TEXT"
+  prompt_tuning_init_text: "Classify the following text:"
+  task_type: "CAUSAL_LM"
+
+training:
+  num_epochs: 5
+  learning_rate: 3.0e-3
+  batch_size: 8
+  gradient_accumulation_steps: 2
+  warmup_ratio: 0.1
+  lr_scheduler: "cosine"
+  max_seq_length: 512
+
+low_resource:
+  batch_size: 4
+  gradient_accumulation_steps: 4
+  max_seq_length: 256

@@ -1,0 +1,30 @@
+# DPO Alignment Configuration
+model:
+  name: "HuggingFaceTB/SmolLM2-360M-Instruct"
+  torch_dtype: "float16"
+
+dpo:
+  beta: 0.1
+  loss_type: "sigmoid"
+  max_length: 512
+  max_prompt_length: 256
+
+lora:  # DPO uses LoRA adapters
+  r: 16
+  lora_alpha: 32
+  target_modules: ["q_proj", "v_proj"]
+  lora_dropout: 0.05
+
+training:
+  num_epochs: 1
+  learning_rate: 5.0e-6
+  batch_size: 2
+  gradient_accumulation_steps: 8
+  warmup_ratio: 0.1
+  lr_scheduler: "cosine"
+
+low_resource:
+  batch_size: 1
+  gradient_accumulation_steps: 16
+  max_length: 256
+  max_prompt_length: 128

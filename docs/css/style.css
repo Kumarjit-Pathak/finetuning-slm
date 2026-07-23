@@ -1,0 +1,48 @@
+/* SLM Fine-Tuning Tutorial — Custom Styles */
+/* Tailwind CSS loaded via CDN in HTML files */
+
+:root {
+  --color-primary: #2563eb;
+  --color-secondary: #7c3aed;
+  --color-success: #16a34a;
+  --color-warning: #d97706;
+  --color-danger: #dc2626;
+  --color-bg: #ffffff;
+  --color-bg-alt: #f8fafc;
+  --color-text: #1e293b;
+  --color-text-muted: #64748b;
+}
+
+[data-theme="dark"] {
+  --color-bg: #0f172a;
+  --color-bg-alt: #1e293b;
+  --color-text: #f1f5f9;
+  --color-text-muted: #94a3b8;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  line-height: 1.7;
+}
+
+.technique-card {
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  background: var(--color-bg-alt);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.technique-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.severity-critical { color: var(--color-danger); font-weight: 600; }
+.severity-high { color: var(--color-warning); font-weight: 600; }
+.severity-medium { color: var(--color-secondary); }
+
+.comparison-table th { cursor: pointer; user-select: none; }
+.comparison-table th:hover { background-color: var(--color-bg-alt); }

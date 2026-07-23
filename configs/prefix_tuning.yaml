@@ -1,0 +1,23 @@
+# Prefix Tuning Configuration
+model:
+  name: "HuggingFaceTB/SmolLM2-360M-Instruct"
+  torch_dtype: "float16"
+
+prefix_tuning:
+  num_virtual_tokens: 30
+  prefix_projection: true
+  task_type: "CAUSAL_LM"
+
+training:
+  num_epochs: 5
+  learning_rate: 1.0e-3
+  batch_size: 4
+  gradient_accumulation_steps: 4
+  warmup_ratio: 0.1
+  lr_scheduler: "cosine"
+  max_seq_length: 512
+
+low_resource:
+  batch_size: 2
+  gradient_accumulation_steps: 8
+  max_seq_length: 256

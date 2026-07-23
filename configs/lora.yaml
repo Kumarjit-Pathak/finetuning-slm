@@ -1,0 +1,26 @@
+# LoRA Fine-Tuning Configuration
+model:
+  name: "HuggingFaceTB/SmolLM2-360M-Instruct"
+  torch_dtype: "float16"
+
+lora:
+  r: 16
+  lora_alpha: 32
+  target_modules: ["q_proj", "v_proj"]
+  lora_dropout: 0.05
+  bias: "none"
+  task_type: "CAUSAL_LM"
+
+training:
+  num_epochs: 3
+  learning_rate: 2.0e-4
+  batch_size: 4
+  gradient_accumulation_steps: 4
+  warmup_ratio: 0.1
+  lr_scheduler: "cosine"
+  max_seq_length: 512
+
+low_resource:
+  batch_size: 2
+  gradient_accumulation_steps: 8
+  max_seq_length: 256

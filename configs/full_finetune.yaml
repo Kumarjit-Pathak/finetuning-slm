@@ -1,0 +1,19 @@
+# Full Fine-Tuning Configuration
+model:
+  name: "HuggingFaceTB/SmolLM2-135M-Instruct"
+  torch_dtype: "float16"
+
+training:
+  num_epochs: 3
+  learning_rate: 2.0e-5
+  batch_size: 4
+  gradient_accumulation_steps: 4
+  warmup_ratio: 0.1
+  lr_scheduler: "cosine"
+  max_seq_length: 512
+
+low_resource:  # For 6GB GPU / Colab
+  batch_size: 1
+  gradient_accumulation_steps: 8
+  gradient_checkpointing: true
+  max_seq_length: 256
