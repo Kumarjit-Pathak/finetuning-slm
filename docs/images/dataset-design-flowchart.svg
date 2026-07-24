@@ -1,0 +1,183 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 600" role="img" aria-labelledby="title desc">
+  <title id="title">Dataset Construction Decision Guide</title>
+  <desc id="desc">A flowchart guiding users through dataset design decisions for fine-tuning small language models, covering objectives like instruction following, domain adaptation, style transfer, alignment/safety, and tool calling, with data source options and quality gates.</desc>
+
+  <defs>
+    <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+    </marker>
+    <marker id="arrowhead-blue" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="900" height="600" fill="#fafbfc" rx="4"/>
+
+  <!-- Title -->
+  <text x="450" y="32" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#1e293b">Dataset Construction Decision Guide</text>
+
+  <!-- START node -->
+  <rect x="295" y="46" width="310" height="38" rx="19" fill="#2563eb" stroke="#1d4ed8" stroke-width="1.5"/>
+  <text x="450" y="70" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="600" fill="#ffffff">What is your fine-tuning objective?</text>
+
+  <!-- Vertical line from START -->
+  <line x1="450" y1="84" x2="450" y2="100" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+
+  <!-- Branch lines -->
+  <!-- Center junction -->
+  <line x1="90" y1="100" x2="810" y2="100" stroke="#64748b" stroke-width="1.5"/>
+  <!-- Vertical drops to each box -->
+  <line x1="90" y1="100" x2="90" y2="118" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+  <line x1="270" y1="100" x2="270" y2="118" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+  <line x1="450" y1="100" x2="450" y2="118" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+  <line x1="630" y1="100" x2="630" y2="118" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+  <line x1="810" y1="100" x2="810" y2="118" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+
+  <!-- Objective 1: Instruction Following (Blue) -->
+  <rect x="20" y="122" width="140" height="40" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="90" y="140" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="600" fill="#2563eb">Instruction</text>
+  <text x="90" y="155" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="600" fill="#2563eb">Following</text>
+
+  <!-- Objective 2: Domain Adaptation (Purple) -->
+  <rect x="200" y="122" width="140" height="40" rx="8" fill="#f5f3ff" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="270" y="140" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="600" fill="#7c3aed">Domain</text>
+  <text x="270" y="155" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="600" fill="#7c3aed">Adaptation</text>
+
+  <!-- Objective 3: Style Transfer (Green) -->
+  <rect x="380" y="122" width="140" height="40" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5"/>
+  <text x="450" y="140" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="600" fill="#16a34a">Style</text>
+  <text x="450" y="155" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="600" fill="#16a34a">Transfer</text>
+
+  <!-- Objective 4: Alignment/Safety (Orange) -->
+  <rect x="560" y="122" width="140" height="40" rx="8" fill="#fffbeb" stroke="#d97706" stroke-width="1.5"/>
+  <text x="630" y="140" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="600" fill="#d97706">Alignment</text>
+  <text x="630" y="155" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="600" fill="#d97706">/ Safety</text>
+
+  <!-- Objective 5: Tool Calling (Red) -->
+  <rect x="740" y="122" width="140" height="40" rx="8" fill="#fef2f2" stroke="#dc2626" stroke-width="1.5"/>
+  <text x="810" y="140" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="600" fill="#dc2626">Tool</text>
+  <text x="810" y="155" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="600" fill="#dc2626">Calling</text>
+
+  <!-- Arrows from objectives to detail boxes -->
+  <line x1="90" y1="162" x2="90" y2="178" stroke="#64748b" stroke-width="1.2" marker-end="url(#arrowhead)"/>
+  <line x1="270" y1="162" x2="270" y2="178" stroke="#64748b" stroke-width="1.2" marker-end="url(#arrowhead)"/>
+  <line x1="450" y1="162" x2="450" y2="178" stroke="#64748b" stroke-width="1.2" marker-end="url(#arrowhead)"/>
+  <line x1="630" y1="162" x2="630" y2="178" stroke="#64748b" stroke-width="1.2" marker-end="url(#arrowhead)"/>
+  <line x1="810" y1="162" x2="810" y2="178" stroke="#64748b" stroke-width="1.2" marker-end="url(#arrowhead)"/>
+
+  <!-- Detail boxes for each objective -->
+  <!-- Detail 1: Instruction Following -->
+  <rect x="20" y="182" width="140" height="68" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="90" y="198" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="10.5" fill="#1e293b">Diverse instruction/</text>
+  <text x="90" y="212" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="10.5" fill="#1e293b">response pairs</text>
+  <text x="90" y="230" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="10.5" font-weight="600" fill="#2563eb">5K–20K for LoRA</text>
+  <text x="90" y="244" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#64748b">Diversity matters</text>
+
+  <!-- Detail 2: Domain Adaptation -->
+  <rect x="200" y="182" width="140" height="68" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="270" y="198" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="10.5" fill="#1e293b">Domain-specific text</text>
+  <text x="270" y="212" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="10.5" fill="#1e293b">at volume</text>
+  <text x="270" y="230" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="10.5" font-weight="600" fill="#7c3aed">10K–100K+ samples</text>
+  <text x="270" y="244" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#64748b">Quality > Diversity</text>
+
+  <!-- Detail 3: Style Transfer -->
+  <rect x="380" y="182" width="140" height="68" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="450" y="198" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="10.5" fill="#1e293b">Parallel examples</text>
+  <text x="450" y="212" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="10.5" fill="#1e293b">in target style</text>
+  <text x="450" y="230" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="10.5" font-weight="600" fill="#16a34a">1K–5K, high quality</text>
+  <text x="450" y="244" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#64748b">Consistency key</text>
+
+  <!-- Detail 4: Alignment/Safety -->
+  <rect x="560" y="182" width="140" height="68" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="630" y="198" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="10.5" fill="#1e293b">Preference pairs with</text>
+  <text x="630" y="212" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="10.5" fill="#1e293b">clear quality delta</text>
+  <text x="630" y="230" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="10.5" font-weight="600" fill="#d97706">5K–10K pairs</text>
+  <text x="630" y="244" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#64748b">Chosen vs Rejected</text>
+
+  <!-- Detail 5: Tool Calling -->
+  <rect x="740" y="182" width="140" height="68" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="810" y="198" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="10.5" fill="#1e293b">Schema-grounded</text>
+  <text x="810" y="212" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="10.5" fill="#1e293b">examples + edge cases</text>
+  <text x="810" y="230" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="10.5" font-weight="600" fill="#dc2626">3K–10K examples</text>
+  <text x="810" y="244" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#64748b">Cover error paths</text>
+
+  <!-- Converging arrows to Data Sources section -->
+  <line x1="90" y1="250" x2="90" y2="280" stroke="#64748b" stroke-width="1.2"/>
+  <line x1="270" y1="250" x2="270" y2="280" stroke="#64748b" stroke-width="1.2"/>
+  <line x1="450" y1="250" x2="450" y2="280" stroke="#64748b" stroke-width="1.2"/>
+  <line x1="630" y1="250" x2="630" y2="280" stroke="#64748b" stroke-width="1.2"/>
+  <line x1="810" y1="250" x2="810" y2="280" stroke="#64748b" stroke-width="1.2"/>
+
+  <!-- Horizontal merge line -->
+  <line x1="90" y1="280" x2="810" y2="280" stroke="#64748b" stroke-width="1.5"/>
+  <line x1="450" y1="280" x2="450" y2="298" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+
+  <!-- Section label: Data Sources -->
+  <text x="450" y="316" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="700" fill="#1e293b">Data Source Options</text>
+
+  <!-- Three source option boxes -->
+  <!-- Human Annotation -->
+  <rect x="105" y="330" width="190" height="80" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="200" y="352" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="600" fill="#2563eb">🧑 Human Annotation</text>
+  <text x="200" y="370" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#1e293b">Highest quality, highest cost</text>
+  <text x="200" y="386" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#1e293b">Best for: alignment,</text>
+  <text x="200" y="400" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#1e293b">safety-critical tasks</text>
+
+  <!-- Synthetic -->
+  <rect x="355" y="330" width="190" height="80" rx="10" fill="#f5f3ff" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="450" y="352" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="600" fill="#7c3aed">🤖 Synthetic Generation</text>
+  <text x="450" y="370" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#1e293b">Scalable, lower cost</text>
+  <text x="450" y="386" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#1e293b">Best for: instruction tuning,</text>
+  <text x="450" y="400" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#1e293b">domain adaptation at scale</text>
+
+  <!-- Hybrid -->
+  <rect x="605" y="330" width="190" height="80" rx="10" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5"/>
+  <text x="700" y="352" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="600" fill="#16a34a">🔀 Hybrid Approach</text>
+  <text x="700" y="370" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#1e293b">Balanced quality &amp; scale</text>
+  <text x="700" y="386" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#1e293b">Human seed + synthetic</text>
+  <text x="700" y="400" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#1e293b">augmentation (recommended)</text>
+
+  <!-- Arrows from source boxes to quality gate -->
+  <line x1="200" y1="410" x2="200" y2="440" stroke="#64748b" stroke-width="1.2"/>
+  <line x1="450" y1="410" x2="450" y2="440" stroke="#64748b" stroke-width="1.2"/>
+  <line x1="700" y1="410" x2="700" y2="440" stroke="#64748b" stroke-width="1.2"/>
+  <line x1="200" y1="440" x2="700" y2="440" stroke="#64748b" stroke-width="1.5"/>
+  <line x1="450" y1="440" x2="450" y2="458" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+
+  <!-- Quality Gate Section -->
+  <text x="450" y="476" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="700" fill="#1e293b">Quality Gate Pipeline</text>
+
+  <!-- Quality gate flow: Filter → Validate → Version -->
+  <!-- Filter -->
+  <rect x="130" y="492" width="150" height="50" rx="8" fill="#fffbeb" stroke="#d97706" stroke-width="1.5"/>
+  <text x="205" y="514" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="600" fill="#d97706">① Filter</text>
+  <text x="205" y="532" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="10.5" fill="#1e293b">Remove low-quality, dupes</text>
+
+  <!-- Arrow Filter → Validate -->
+  <line x1="280" y1="517" x2="320" y2="517" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+
+  <!-- Validate -->
+  <rect x="325" y="492" width="150" height="50" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="400" y="514" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="600" fill="#2563eb">② Validate</text>
+  <text x="400" y="532" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="10.5" fill="#1e293b">Format check, scoring</text>
+
+  <!-- Arrow Validate → Version -->
+  <line x1="475" y1="517" x2="515" y2="517" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+
+  <!-- Version -->
+  <rect x="520" y="492" width="150" height="50" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5"/>
+  <text x="595" y="514" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="600" fill="#16a34a">③ Version</text>
+  <text x="595" y="532" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="10.5" fill="#1e293b">Track lineage, snapshot</text>
+
+  <!-- Arrow Version → Ready -->
+  <line x1="670" y1="517" x2="710" y2="517" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+
+  <!-- Ready badge -->
+  <rect x="715" y="500" width="100" height="34" rx="17" fill="#16a34a" stroke="#15803d" stroke-width="1.5"/>
+  <text x="765" y="522" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="600" fill="#ffffff">✓ Ready</text>
+
+  <!-- Footer note -->
+  <text x="450" y="575" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#64748b">Iterate: monitor model performance → refine dataset → retrain</text>
+  <text x="450" y="592" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#94a3b8">SLM Fine-Tuning Tutorial • Dataset Design Guide</text>
+</svg>

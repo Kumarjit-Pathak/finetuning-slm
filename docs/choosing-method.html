@@ -3,26 +3,383 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>choosing-method — SLM Fine-Tuning Tutorial</title>
+  <title>Choosing a Method & Dataset Design — SLM Fine-Tuning Tutorial</title>
+  <meta name="description" content="How to choose a fine-tuning method and design datasets that actually work. The most underrated skill in fine-tuning, explained like a friend over coffee.">
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: ['selector', '[data-theme="dark"]'],
+    }
+  </script>
   <link rel="stylesheet" href="css/style.css">
 </head>
-<body class="min-h-screen">
-  <nav class="bg-gray-900 text-white py-3 px-6">
+<body class="min-h-screen bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 transition-colors">
+
+  <!-- Navigation -->
+  <nav class="bg-gray-900 text-white py-3 px-6 sticky top-0 z-50 shadow-lg">
     <div class="max-w-6xl mx-auto flex justify-between items-center">
-      <a href="index.html" class="font-bold">SLM Fine-Tuning</a>
-      <div class="flex gap-4 text-sm">
-        <a href="techniques.html" class="hover:text-blue-300">Techniques</a>
-        <a href="comparison.html" class="hover:text-blue-300">Compare</a>
-        <a href="safety.html" class="hover:text-blue-300">Safety</a>
-        <a href="guide.html" class="hover:text-blue-300">Guide</a>
+      <a href="index.html" class="font-bold text-lg">SLM Fine-Tuning</a>
+      <div class="hidden md:flex gap-4 text-sm">
+        <a href="techniques.html" class="hover:text-blue-300 transition-colors">Techniques</a>
+        <a href="comparison.html" class="hover:text-blue-300 transition-colors">Compare</a>
+        <a href="choosing-method.html" class="text-blue-300 font-semibold">Which Method?</a>
+        <a href="safety.html" class="hover:text-blue-300 transition-colors">Safety</a>
+        <a href="guide.html" class="hover:text-blue-300 transition-colors">Guide</a>
       </div>
+      <button onclick="toggleDarkMode()" class="text-sm bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded-md transition-colors" aria-label="Toggle dark mode">
+        🌓
+      </button>
     </div>
   </nav>
-  <main class="max-w-4xl mx-auto px-6 py-12">
-    <h1 class="text-3xl font-bold mb-6">choosing method</h1>
-    <p class="text-gray-500">🚧 Under development</p>
+
+  <!-- Hero Section -->
+  <!-- humanized -->
+  <header class="bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 text-white py-20">
+    <div class="max-w-4xl mx-auto px-6 text-center">
+      <p class="text-blue-200 text-sm font-semibold uppercase tracking-wide mb-3">The Skill Nobody Talks About</p>
+      <h1 class="text-4xl md:text-5xl font-bold mb-6 leading-tight">
+        Dataset Design:<br class="hidden sm:block"> The Make-or-Break of Fine-Tuning
+      </h1>
+      <p class="text-xl md:text-2xl opacity-90 max-w-2xl mx-auto leading-relaxed">
+        Your model is only as good as the data you feed it. A perfect training recipe with garbage data produces… expensive garbage. And trust me, nobody wants to explain to their manager that they burned $200 in GPU time to teach a model nonsense.
+      </p>
+      <p class="mt-6 text-blue-200 text-base italic">
+        "Fine-tuning without dataset design is like giving Gordon Ramsay gas-station ingredients and expecting a Michelin star. He'd flip the table — and so will your loss curve."
+      </p>
+    </div>
+  </header>
+
+  <main class="max-w-4xl mx-auto px-6 py-16 space-y-20">
+
+    <!-- Page TOC -->
+    <nav class="bg-slate-50 dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700" aria-label="Page contents">
+      <h2 class="font-bold text-lg mb-3">On this page</h2>
+      <ol class="list-decimal list-inside space-y-1 text-sm text-slate-600 dark:text-slate-300">
+        <li><a href="#objective-data" class="hover:text-blue-600 dark:hover:text-blue-400">Objective → Data Requirements</a></li>
+        <li><a href="#how-much-data" class="hover:text-blue-600 dark:hover:text-blue-400">How Much Data Do You Need?</a></li>
+        <li><a href="#quality-over-quantity" class="hover:text-blue-600 dark:hover:text-blue-400">Data Quality > Data Quantity</a></li>
+        <li><a href="#pipeline" class="hover:text-blue-600 dark:hover:text-blue-400">The Dataset Construction Pipeline</a></li>
+        <li><a href="#try-it" class="hover:text-blue-600 dark:hover:text-blue-400">Try It Yourself</a></li>
+      </ol>
+    </nav>
+
+    <!-- Section 1: Objective → Data Requirements -->
+    <!-- humanized -->
+    <section id="objective-data">
+      <h2 class="text-3xl font-bold mb-3 text-slate-900 dark:text-white">Objective → Data Requirements</h2>
+      <p class="text-lg text-slate-600 dark:text-slate-300 mb-6">
+        Before you collect a single example, ask: <strong>"What do I want my model to do differently after training?"</strong> The answer dictates everything — format, volume, sources. Think of it like packing for a trip: you wouldn't throw snowshoes in your bag for a beach vacation. (Well, unless your vacation is "debugging CUDA errors," which is its own kind of winter.) 🧳
+      </p>
+
+      <div class="grid gap-4 md:grid-cols-2">
+        <!-- Instruction Following -->
+        <!-- humanized -->
+        <div class="technique-card border-l-4 border-blue-500">
+          <h3 class="font-bold text-blue-600 dark:text-blue-400 mb-2">🎯 Instruction Following</h3>
+          <p class="text-sm text-slate-600 dark:text-slate-300 mb-2">
+            You want the model to actually <em>listen</em> when you tell it to do something. Revolutionary concept, I know.
+          </p>
+          <p class="text-sm font-medium">Data needed:</p>
+          <ul class="text-sm text-slate-500 dark:text-slate-400 list-disc list-inside">
+            <li>Diverse instruction-response pairs</li>
+            <li>Variety in task type (QA, summarization, coding, creative)</li>
+            <li>Multiple phrasings for similar intents</li>
+          </ul>
+        </div>
+
+        <!-- Domain Adaptation -->
+        <!-- humanized -->
+        <div class="technique-card border-l-4 border-purple-500">
+          <h3 class="font-bold text-purple-600 dark:text-purple-400 mb-2">🏥 Domain Adaptation</h3>
+          <p class="text-sm text-slate-600 dark:text-slate-300 mb-2">
+            You want the model to speak your industry's language fluently — like teaching our friend SmolLM2-135M to pass as a radiologist at a dinner party.
+          </p>
+          <p class="text-sm font-medium">Data needed:</p>
+          <ul class="text-sm text-slate-500 dark:text-slate-400 list-disc list-inside">
+            <li>Large volume of domain text (papers, docs, logs)</li>
+            <li>Continued pretraining format (raw text)</li>
+            <li>Domain-specific QA pairs for validation</li>
+          </ul>
+        </div>
+
+        <!-- Style Transfer -->
+        <div class="technique-card border-l-4 border-green-500">
+          <h3 class="font-bold text-green-600 dark:text-green-400 mb-2">✍️ Style Transfer</h3>
+          <p class="text-sm text-slate-600 dark:text-slate-300 mb-2">
+            You want the model to write in a specific voice or tone.
+          </p>
+          <p class="text-sm font-medium">Data needed:</p>
+          <ul class="text-sm text-slate-500 dark:text-slate-400 list-disc list-inside">
+            <li>Parallel examples: generic → styled rewrites</li>
+            <li>High-quality exemplars of the target voice</li>
+            <li>Negative examples of what to avoid</li>
+          </ul>
+        </div>
+
+        <!-- Alignment -->
+        <!-- humanized -->
+        <div class="technique-card border-l-4 border-orange-500">
+          <h3 class="font-bold text-orange-600 dark:text-orange-400 mb-2">⚖️ Alignment (RLHF/DPO)</h3>
+          <p class="text-sm text-slate-600 dark:text-slate-300 mb-2">
+            You want the model to prefer helpful, safe responses — basically teaching it manners. "Don't be chaotic evil" is the vibe here.
+          </p>
+          <p class="text-sm font-medium">Data needed:</p>
+          <ul class="text-sm text-slate-500 dark:text-slate-400 list-disc list-inside">
+            <li>Preference pairs: (chosen response, rejected response)</li>
+            <li>Consistent annotation guidelines</li>
+            <li>Coverage of edge cases and refusals</li>
+          </ul>
+        </div>
+
+        <!-- Tool-Calling -->
+        <!-- humanized -->
+        <div class="technique-card border-l-4 border-red-500 md:col-span-2">
+          <h3 class="font-bold text-red-600 dark:text-red-400 mb-2">🔧 Tool-Calling / Function-Calling</h3>
+          <p class="text-sm text-slate-600 dark:text-slate-300 mb-2">
+            You want the model to invoke APIs or tools with correct arguments — not just hallucinate a function that doesn't exist and call it with the confidence of a CEO reading a teleprompter.
+          </p>
+          <p class="text-sm font-medium">Data needed:</p>
+          <ul class="text-sm text-slate-500 dark:text-slate-400 list-disc list-inside">
+            <li>Schema-grounded examples (tool definitions + usage)</li>
+            <li>Multi-turn conversations showing tool selection reasoning</li>
+            <li>Error handling cases (wrong tool, missing params)</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 2: How Much Data Do You Need? -->
+    <!-- humanized -->
+    <section id="how-much-data">
+      <h2 class="text-3xl font-bold mb-3 text-slate-900 dark:text-white">How Much Data Do You Need?</h2>
+      <p class="text-lg text-slate-600 dark:text-slate-300 mb-6">
+        Ah, the eternal question. "How much data do I need?" is the ML equivalent of "how long until we get there?" — and the answer is equally annoying: <em>it depends</em>. But unlike a road trip with no GPS, I'm going to hand you an actual map. Here's a cheat sheet distilled from dozens of papers and painful trial runs. 🗺️
+      </p>
+
+      <div class="overflow-x-auto">
+        <table class="comparison-table w-full text-sm border-collapse rounded-lg overflow-hidden shadow-sm">
+          <thead>
+            <tr class="bg-slate-100 dark:bg-slate-700">
+              <th class="text-left p-3 font-semibold">Objective</th>
+              <th class="text-left p-3 font-semibold">Minimum Viable</th>
+              <th class="text-left p-3 font-semibold">Recommended</th>
+              <th class="text-left p-3 font-semibold">Diminishing Returns</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-200 dark:divide-slate-600">
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800">
+              <td class="p-3 font-medium">Instruction Following</td>
+              <td class="p-3">500 examples</td>
+              <td class="p-3">5K–10K examples</td>
+              <td class="p-3">>50K (diversity matters more)</td>
+            </tr>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800">
+              <td class="p-3 font-medium">Domain Adaptation</td>
+              <td class="p-3">10MB text</td>
+              <td class="p-3">100MB–1GB text</td>
+              <td class="p-3">>10GB (quality plateaus)</td>
+            </tr>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800">
+              <td class="p-3 font-medium">Style Transfer</td>
+              <td class="p-3">200 examples</td>
+              <td class="p-3">1K–5K parallel pairs</td>
+              <td class="p-3">>10K (overfitting risk)</td>
+            </tr>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800">
+              <td class="p-3 font-medium">Alignment (DPO)</td>
+              <td class="p-3">1K pairs</td>
+              <td class="p-3">5K–20K preference pairs</td>
+              <td class="p-3">>50K (annotator noise dominates)</td>
+            </tr>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800">
+              <td class="p-3 font-medium">Tool-Calling</td>
+              <td class="p-3">300 examples</td>
+              <td class="p-3">2K–5K schema-grounded</td>
+              <td class="p-3">>15K (schema coverage matters)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="mt-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg p-4">
+        <p class="text-sm text-amber-800 dark:text-amber-200">
+          <strong>⚠️ SLM-specific note:</strong> Small Language Models (< 3B params) are more data-hungry than their bigger siblings. They have less "world knowledge" baked in, so you may need to push toward the upper end of these ranges. Our friend SmolLM2-135M especially benefits from more examples — it's the scrappy intern who learns fast but needs to see more examples before the pattern clicks. Meanwhile, GPT-4 is watching from its penthouse with 1.8 trillion parameters, casually one-shotting tasks that SmolLM2 needs 5,000 examples for. Life isn't fair, but hey — at least SmolLM2 fits on your laptop.
+        </p>
+      </div>
+    </section>
+
+    <!-- Section 3: Quality > Quantity -->
+    <!-- humanized -->
+    <section id="quality-over-quantity">
+      <h2 class="text-3xl font-bold mb-3 text-slate-900 dark:text-white">Data Quality > Data Quantity</h2>
+      <p class="text-lg text-slate-600 dark:text-slate-300 mb-6">
+        Here's the dirty secret of fine-tuning that took the community <em>years</em> to accept: <strong>1,000 pristine examples beat 100,000 noisy ones</strong>. Every. Single. Time. I know — it sounds like something a data quality vendor would put on a billboard. But it's true, and the proof is embarrassingly robust.
+      </p>
+
+      <div class="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-xl p-6 border border-blue-100 dark:border-blue-800 mb-6">
+        <h3 class="font-bold text-lg mb-3">🧪 The LIMA Principle</h3>
+        <p class="text-slate-700 dark:text-slate-300 mb-3">
+          The famous <em>LIMA: Less Is More for Alignment</em> paper showed that just 1,000 carefully curated examples could match models trained on 50K+ noisy examples. Why? Because every bad example teaches your model a bad habit.
+        </p>
+        <p class="text-slate-700 dark:text-slate-300">
+          Think of it like learning guitar: 30 minutes of focused practice with a metronome beats 3 hours of noodling random riffs. Your model's "practice time" is limited by compute — make every rep count.
+        </p>
+      </div>
+
+      <h3 class="font-bold text-xl mb-3">What makes data "high quality"?</h3>
+      <p class="text-slate-600 dark:text-slate-300 mb-3 text-sm italic">Think of these as the "five love languages" of your dataset — nail all five and your model will absolutely adore you:</p>
+      <ul class="space-y-3">
+        <li class="flex items-start gap-3">
+          <span class="text-green-500 font-bold text-lg">✓</span>
+          <span class="text-slate-600 dark:text-slate-300"><strong>Accurate:</strong> Responses are factually correct and complete</span>
+        </li>
+        <li class="flex items-start gap-3">
+          <span class="text-green-500 font-bold text-lg">✓</span>
+          <span class="text-slate-600 dark:text-slate-300"><strong>Consistent:</strong> Format and style are uniform across examples</span>
+        </li>
+        <li class="flex items-start gap-3">
+          <span class="text-green-500 font-bold text-lg">✓</span>
+          <span class="text-slate-600 dark:text-slate-300"><strong>Diverse:</strong> Covers the full distribution of inputs you expect at inference</span>
+        </li>
+        <li class="flex items-start gap-3">
+          <span class="text-green-500 font-bold text-lg">✓</span>
+          <span class="text-slate-600 dark:text-slate-300"><strong>Decontaminated:</strong> No test-set leakage, no duplicates, no garbage</span>
+        </li>
+        <li class="flex items-start gap-3">
+          <span class="text-red-500 font-bold text-lg">✗</span>
+          <span class="text-slate-600 dark:text-slate-300"><strong>Avoid:</strong> Auto-generated slop, conflicting labels, truncated responses — basically, anything that would make a human annotator sigh deeply and reach for coffee</span>
+        </li>
+      </ul>
+
+      <div class="mt-6 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-700 rounded-lg p-4">
+        <p class="text-sm text-indigo-800 dark:text-indigo-200">
+          <strong>📓 See it in action:</strong> The accompanying notebook demonstrates empirically what happens when you fine-tune on clean vs. noisy data with identical hyperparameters. Spoiler: the quality gap is <em>brutal</em> — like "did I accidentally shuffle the labels?" brutal.
+        </p>
+      </div>
+    </section>
+
+    <!-- Section 4: Dataset Construction Pipeline -->
+    <!-- humanized -->
+    <section id="pipeline">
+      <h2 class="text-3xl font-bold mb-3 text-slate-900 dark:text-white">The Dataset Construction Pipeline</h2>
+      <p class="text-lg text-slate-600 dark:text-slate-300 mb-6">
+        Building a dataset isn't "download from Hugging Face and pray." (Though we've all been there. No judgment.) It's a structured engineering process with actual steps. Think of it as a water purification plant: raw, murky river water goes in one end; clean, won't-give-you-dysentery drinking water comes out the other. Your data needs the same treatment.
+      </p>
+
+      <!-- Visual Reference -->
+      <div class="mb-8 bg-slate-50 dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700 text-center">
+        <img src="images/dataset-design-flowchart.svg" 
+             alt="Dataset construction pipeline: Define → Source → Collect → Filter → Validate → Version" 
+             class="mx-auto max-w-full h-auto"
+             loading="lazy">
+        <p class="text-xs text-slate-400 mt-2">Dataset Construction Pipeline (SVG diagram)</p>
+      </div>
+
+      <!-- Pipeline Steps -->
+      <div class="space-y-6">
+        <!-- Step 1 -->
+        <div class="flex gap-4 items-start">
+          <div class="flex-shrink-0 w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-lg">1</div>
+          <div>
+            <h3 class="font-bold text-lg text-slate-900 dark:text-white">Define Your Objective</h3>
+            <p class="text-slate-600 dark:text-slate-300">
+              What task? What format? What quality bar? Write this down before touching any data. A vague objective → a vague dataset → a vague model. Be ruthlessly specific: "Summarize legal contracts into 3-bullet executive briefs" beats "make it do summarization."
+            </p>
+          </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="flex gap-4 items-start">
+          <div class="flex-shrink-0 w-10 h-10 bg-purple-600 text-white rounded-full flex items-center justify-center font-bold text-lg">2</div>
+          <div>
+            <h3 class="font-bold text-lg text-slate-900 dark:text-white">Choose Your Source</h3>
+            <p class="text-slate-600 dark:text-slate-300">
+              Options: existing datasets (Hugging Face Hub), synthetic generation (GPT-4/Claude as a teacher), manual annotation, or internal data. Each has trade-offs — it's the classic "fast, cheap, good: pick two" triangle. Synthetic data is cheap and fast but can introduce subtle "teacher fingerprints" (your model starts sounding suspiciously like GPT-4's younger sibling). Human annotation is gold-standard but expensive enough to make your finance team weep.
+            </p>
+          </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="flex gap-4 items-start">
+          <div class="flex-shrink-0 w-10 h-10 bg-green-600 text-white rounded-full flex items-center justify-center font-bold text-lg">3</div>
+          <div>
+            <h3 class="font-bold text-lg text-slate-900 dark:text-white">Collect & Generate</h3>
+            <p class="text-slate-600 dark:text-slate-300">
+              Gather raw examples. If using synthetic generation, define templates and seed examples. If scraping, respect licenses (seriously — lawyers are scarier than OOM errors). Pro tip: aim for 3-5× more raw data than your target. You <em>will</em> lose a lot during filtering — think of it like panning for gold. Most of what you scoop up is river mud.
+            </p>
+          </div>
+        </div>
+
+        <!-- Step 4 -->
+        <div class="flex gap-4 items-start">
+          <div class="flex-shrink-0 w-10 h-10 bg-orange-600 text-white rounded-full flex items-center justify-center font-bold text-lg">4</div>
+          <div>
+            <h3 class="font-bold text-lg text-slate-900 dark:text-white">Filter Aggressively</h3>
+            <p class="text-slate-600 dark:text-slate-300">
+              This is where the magic happens — and where most teams get timid. Remove duplicates (exact and near-duplicate via MinHash). Drop low-quality examples (too short, too long, low perplexity, garbled text). Apply domain-specific heuristics. Be ruthless. Channel your inner Marie Kondo: if an example does not spark joy (or learning signal), it does not make the cut. Most teams don't filter hard enough, and their models pay the price.
+            </p>
+          </div>
+        </div>
+
+        <!-- Step 5 -->
+        <div class="flex gap-4 items-start">
+          <div class="flex-shrink-0 w-10 h-10 bg-red-600 text-white rounded-full flex items-center justify-center font-bold text-lg">5</div>
+          <div>
+            <h3 class="font-bold text-lg text-slate-900 dark:text-white">Validate & Review</h3>
+            <p class="text-slate-600 dark:text-slate-300">
+              Sample 5-10% and manually review. Yes, with your actual human eyeballs. Check for format consistency, label accuracy, and bias. Use inter-annotator agreement if multiple reviewers. I know manual review sounds tedious — and it is — but a single validation pass catches issues that would otherwise cost you days of wasted training. (The GPU said: <code>[out of memory]</code> is bad enough without discovering your data was garbage <em>after</em> paying the compute bill.)
+            </p>
+          </div>
+        </div>
+
+        <!-- Step 6 -->
+        <div class="flex gap-4 items-start">
+          <div class="flex-shrink-0 w-10 h-10 bg-indigo-600 text-white rounded-full flex items-center justify-center font-bold text-lg">6</div>
+          <div>
+            <h3 class="font-bold text-lg text-slate-900 dark:text-white">Version & Document</h3>
+            <p class="text-slate-600 dark:text-slate-300">
+              Tag your dataset with a version (v1.0, v1.1…). Document: source, filters applied, size, known limitations. Future-you will send present-you a thank-you card. (Past-you who didn't document anything? We don't talk to that person.) Use dataset cards (Hugging Face format) or at minimum a README alongside your data files.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 5: Try It Yourself -->
+    <!-- humanized -->
+    <section id="try-it">
+      <div class="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl p-8 border border-green-200 dark:border-green-700 text-center">
+        <h2 class="text-2xl font-bold mb-3 text-green-800 dark:text-green-200">🚀 Try It Yourself</h2>
+        <p class="text-green-700 dark:text-green-300 mb-6 max-w-lg mx-auto">
+          Alright, you've read the theory — now let's get your hands dirty. The companion notebook walks you through the entire pipeline from scratch: defining objectives, sourcing data, filtering the junk, and producing a versioned, ready-to-train dataset. By the end, you'll have built something real. No hand-waving. No "left as an exercise for the reader."
+        </p>
+        <a href="../notebooks/01_dataset_design_and_data_prep.ipynb" 
+           class="inline-block bg-green-600 hover:bg-green-700 text-white font-semibold px-8 py-3 rounded-lg shadow-md hover:shadow-lg transition-all">
+          Open Notebook: Dataset Design & Data Prep →
+        </a>
+        <p class="text-xs text-green-600 dark:text-green-400 mt-3">
+          Works in Google Colab • No GPU required for this notebook • Your wallet is safe 💚
+        </p>
+      </div>
+    </section>
+
   </main>
+
+  <!-- Footer -->
+  <footer class="bg-slate-100 dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 py-8 mt-16">
+    <div class="max-w-4xl mx-auto px-6 text-center text-sm text-slate-500 dark:text-slate-400">
+      <p class="mb-2">Part of the <strong>SLM Fine-Tuning Tutorial</strong> series</p>
+      <div class="flex justify-center gap-4 flex-wrap">
+        <a href="index.html" class="hover:text-blue-600 dark:hover:text-blue-400">Home</a>
+        <a href="techniques.html" class="hover:text-blue-600 dark:hover:text-blue-400">Techniques</a>
+        <a href="comparison.html" class="hover:text-blue-600 dark:hover:text-blue-400">Comparison</a>
+        <a href="choosing-method.html" class="hover:text-blue-600 dark:hover:text-blue-400">Choosing Method</a>
+        <a href="guide.html" class="hover:text-blue-600 dark:hover:text-blue-400">Learning Path</a>
+        <a href="safety.html" class="hover:text-blue-600 dark:hover:text-blue-400">Safety</a>
+      </div>
+    </div>
+  </footer>
+
   <script src="js/main.js"></script>
 </body>
 </html>
