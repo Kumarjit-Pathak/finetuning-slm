@@ -3,26 +3,427 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>techniques — SLM Fine-Tuning Tutorial</title>
+  <title>Fine-Tuning Techniques — SLM Fine-Tuning Tutorial</title>
+  <meta name="description" content="Every fine-tuning technique explained — from brute force full fine-tuning to surgical precision adapters. Understand what each method does, when to use it, and common pitfalls.">
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: ['selector', '[data-theme="dark"]'],
+    }
+  </script>
   <link rel="stylesheet" href="css/style.css">
 </head>
-<body class="min-h-screen">
-  <nav class="bg-gray-900 text-white py-3 px-6">
+<body class="min-h-screen bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 transition-colors">
+
+  <!-- Navigation -->
+  <nav class="bg-gray-900 text-white py-3 px-6 sticky top-0 z-50 shadow-lg">
     <div class="max-w-6xl mx-auto flex justify-between items-center">
-      <a href="index.html" class="font-bold">SLM Fine-Tuning</a>
-      <div class="flex gap-4 text-sm">
-        <a href="techniques.html" class="hover:text-blue-300">Techniques</a>
-        <a href="comparison.html" class="hover:text-blue-300">Compare</a>
-        <a href="safety.html" class="hover:text-blue-300">Safety</a>
-        <a href="guide.html" class="hover:text-blue-300">Guide</a>
+      <a href="index.html" class="font-bold text-lg">SLM Fine-Tuning</a>
+      <div class="hidden md:flex gap-4 text-sm">
+        <a href="techniques.html" class="text-blue-300 font-semibold">Techniques</a>
+        <a href="comparison.html" class="hover:text-blue-300 transition-colors">Compare</a>
+        <a href="choosing-method.html" class="hover:text-blue-300 transition-colors">Which Method?</a>
+        <a href="safety.html" class="hover:text-blue-300 transition-colors">Safety</a>
+        <a href="guide.html" class="hover:text-blue-300 transition-colors">Guide</a>
       </div>
+      <button onclick="toggleDarkMode()" class="text-sm bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded-md transition-colors" aria-label="Toggle dark mode">
+        🌓
+      </button>
     </div>
   </nav>
-  <main class="max-w-4xl mx-auto px-6 py-12">
-    <h1 class="text-3xl font-bold mb-6">techniques</h1>
-    <p class="text-gray-500">🚧 Under development</p>
+
+  <!-- Hero Section -->
+  <header class="bg-gradient-to-br from-orange-500 via-red-500 to-pink-600 text-white py-20">
+    <div class="max-w-4xl mx-auto px-6 text-center">
+      <p class="text-orange-200 text-sm font-semibold uppercase tracking-wide mb-3">The Deep Dive</p>
+      <h1 class="text-4xl md:text-5xl font-bold mb-6 leading-tight">
+        Fine-Tuning Techniques:<br class="hidden sm:block"> From Brute Force to Surgical Precision
+      </h1>
+      <p class="text-xl md:text-2xl opacity-90 max-w-2xl mx-auto leading-relaxed">
+        Every technique explained — what it does, when it shines, and when it'll set your GPU (and your patience) on fire. Think of this as the menu at a fine-tuning restaurant.
+      </p>
+      <p class="mt-6 text-orange-200 text-base italic">
+        "Choosing a fine-tuning method without understanding the options is like ordering off the menu in a language you don't speak. You might get filet mignon… or you might get tripe."
+      </p>
+    </div>
+  </header>
+
+  <main class="max-w-4xl mx-auto px-6 py-16 space-y-20">
+
+    <!-- Page TOC -->
+    <nav class="bg-slate-50 dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700" aria-label="Page contents">
+      <h2 class="font-bold text-lg mb-3">Techniques Covered</h2>
+      <ol class="list-decimal list-inside space-y-1 text-sm text-slate-600 dark:text-slate-300">
+        <li><a href="#full-finetuning" class="hover:text-blue-600 dark:hover:text-blue-400 font-medium">Full Fine-Tuning</a> — The "update everything" approach</li>
+        <li class="text-slate-400 dark:text-slate-500">LoRA & QLoRA — <em>coming soon</em></li>
+        <li class="text-slate-400 dark:text-slate-500">Prompt Tuning — <em>coming soon</em></li>
+        <li class="text-slate-400 dark:text-slate-500">Adapter Layers — <em>coming soon</em></li>
+        <li class="text-slate-400 dark:text-slate-500">DPO / RLHF — <em>coming soon</em></li>
+      </ol>
+    </nav>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- TECHNIQUE 1: Full Fine-Tuning              -->
+    <!-- ═══════════════════════════════════════════ -->
+    <section id="full-finetuning" class="space-y-10">
+
+      <!-- Section Header -->
+      <div class="border-b-2 border-orange-400 pb-4">
+        <span class="inline-block bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full mb-3">Technique #1</span>
+        <h2 class="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white">Full Fine-Tuning</h2>
+        <p class="text-lg text-slate-600 dark:text-slate-300 mt-2">
+          The OG. The brute-force champion. The "I have compute and I'm not afraid to use it" approach.
+        </p>
+      </div>
+
+      <!-- What is Full Fine-Tuning? -->
+      <div class="technique-card border-l-4 border-orange-500">
+        <h3 class="text-xl font-bold text-orange-600 dark:text-orange-400 mb-3">🔥 What is Full Fine-Tuning?</h3>
+        <p class="text-slate-600 dark:text-slate-300 mb-4">
+          Full fine-tuning means you take a pre-trained model and update <strong>every single parameter</strong> on your task-specific data. All the weights, all the layers, all the attention heads — everything gets a chance to learn from your dataset.
+        </p>
+        <p class="text-slate-600 dark:text-slate-300 mb-4">
+          It's conceptually the simplest approach: you already have weights that "know language" from pre-training, and you continue gradient descent on your data. The model's entire capacity is available to adapt to your task.
+        </p>
+        <p class="text-slate-600 dark:text-slate-300">
+          Think of it like remodeling an entire house. Sure, the foundation is solid (pre-trained knowledge), but you're repainting every room, replacing the fixtures, and maybe knocking out a wall or two. It's thorough — but it's also expensive and you might accidentally damage the plumbing. 🏠🔨
+        </p>
+      </div>
+
+      <!-- When to Use / When NOT to Use -->
+      <div class="grid gap-6 md:grid-cols-2">
+        <div class="technique-card border-l-4 border-green-500">
+          <h3 class="text-lg font-bold text-green-600 dark:text-green-400 mb-3">✅ When to Use</h3>
+          <ul class="space-y-2 text-sm text-slate-600 dark:text-slate-300">
+            <li class="flex items-start gap-2">
+              <span class="text-green-500 mt-0.5">●</span>
+              <span><strong>Small models (≤500M params)</strong> — memory is manageable, training is fast</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="text-green-500 mt-0.5">●</span>
+              <span><strong>Maximum task quality needed</strong> — you want every last drop of performance</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="text-green-500 mt-0.5">●</span>
+              <span><strong>Sufficient compute available</strong> — you have the GPU VRAM and time</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="text-green-500 mt-0.5">●</span>
+              <span><strong>Your task differs significantly from pre-training</strong> — the model needs deep adaptation</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="text-green-500 mt-0.5">●</span>
+              <span><strong>You only need one model</strong> — not serving multiple adapters</span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="technique-card border-l-4 border-red-500">
+          <h3 class="text-lg font-bold text-red-600 dark:text-red-400 mb-3">❌ When NOT to Use</h3>
+          <ul class="space-y-2 text-sm text-slate-600 dark:text-slate-300">
+            <li class="flex items-start gap-2">
+              <span class="text-red-500 mt-0.5">●</span>
+              <span><strong>Large models (>1B params)</strong> — VRAM goes brrr and your wallet goes 😭</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="text-red-500 mt-0.5">●</span>
+              <span><strong>Limited VRAM</strong> — full FT of a 1B model needs ~12GB+ just for optimizer states</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="text-red-500 mt-0.5">●</span>
+              <span><strong>Risk of catastrophic forgetting</strong> — the model "forgets" its original capabilities</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="text-red-500 mt-0.5">●</span>
+              <span><strong>Small dataset</strong> — overfitting is almost guaranteed with few examples</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="text-red-500 mt-0.5">●</span>
+              <span><strong>Multi-tenant serving</strong> — you can't easily swap full models per user</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- How it Works -->
+      <div class="technique-card border-l-4 border-blue-500">
+        <h3 class="text-xl font-bold text-blue-600 dark:text-blue-400 mb-3">⚙️ How it Works</h3>
+        <p class="text-slate-600 dark:text-slate-300 mb-4">
+          The recipe is beautifully simple (which is part of the appeal):
+        </p>
+        <ol class="space-y-3 text-slate-600 dark:text-slate-300">
+          <li class="flex items-start gap-3">
+            <span class="flex-shrink-0 w-7 h-7 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded-full flex items-center justify-center text-sm font-bold">1</span>
+            <span><strong>Load pre-trained weights</strong> — start from a checkpoint that already understands language structure</span>
+          </li>
+          <li class="flex items-start gap-3">
+            <span class="flex-shrink-0 w-7 h-7 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded-full flex items-center justify-center text-sm font-bold">2</span>
+            <span><strong>Prepare your dataset</strong> — tokenize, format, and batch your task-specific data</span>
+          </li>
+          <li class="flex items-start gap-3">
+            <span class="flex-shrink-0 w-7 h-7 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded-full flex items-center justify-center text-sm font-bold">3</span>
+            <span><strong>Run gradient descent</strong> — backprop through ALL layers, updating every parameter</span>
+          </li>
+          <li class="flex items-start gap-3">
+            <span class="flex-shrink-0 w-7 h-7 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded-full flex items-center justify-center text-sm font-bold">4</span>
+            <span><strong>Save the entire model</strong> — the result is a completely new set of weights (same architecture, different values)</span>
+          </li>
+        </ol>
+        <div class="mt-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+          <p class="text-sm text-blue-800 dark:text-blue-200">
+            <strong>💡 Key insight:</strong> Unlike LoRA (which learns a small "diff"), full fine-tuning produces a model that's the same <em>size</em> as the original but with completely different parameter values. You can't easily merge it or swap between tasks — it's a whole new model.
+          </p>
+        </div>
+      </div>
+
+      <!-- Key Parameters -->
+      <div class="technique-card border-l-4 border-purple-500">
+        <h3 class="text-xl font-bold text-purple-600 dark:text-purple-400 mb-3">🎛️ Key Parameters</h3>
+        <p class="text-slate-600 dark:text-slate-300 mb-4">
+          These are the knobs you'll be turning. Get them wrong and your model either doesn't learn or learns to produce hot garbage.
+        </p>
+        <div class="overflow-x-auto">
+          <table class="comparison-table w-full text-sm border-collapse rounded-lg overflow-hidden shadow-sm">
+            <thead>
+              <tr class="bg-slate-100 dark:bg-slate-700">
+                <th class="text-left p-3 font-semibold">Parameter</th>
+                <th class="text-left p-3 font-semibold">Typical Range</th>
+                <th class="text-left p-3 font-semibold">Why It Matters</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200 dark:divide-slate-600">
+              <tr class="hover:bg-slate-50 dark:hover:bg-slate-800">
+                <td class="p-3 font-medium">Learning Rate</td>
+                <td class="p-3"><code class="text-xs bg-slate-200 dark:bg-slate-600 px-1.5 py-0.5 rounded">1e-5 → 5e-5</code></td>
+                <td class="p-3">Too high = catastrophic forgetting. Too low = your model naps through training.</td>
+              </tr>
+              <tr class="hover:bg-slate-50 dark:hover:bg-slate-800">
+                <td class="p-3 font-medium">Epochs</td>
+                <td class="p-3"><code class="text-xs bg-slate-200 dark:bg-slate-600 px-1.5 py-0.5 rounded">1 → 5</code></td>
+                <td class="p-3">More passes = more memorization. For small datasets, even 3 epochs can overfit.</td>
+              </tr>
+              <tr class="hover:bg-slate-50 dark:hover:bg-slate-800">
+                <td class="p-3 font-medium">Batch Size</td>
+                <td class="p-3"><code class="text-xs bg-slate-200 dark:bg-slate-600 px-1.5 py-0.5 rounded">4 → 32</code></td>
+                <td class="p-3">Larger = smoother gradients, more VRAM. Smaller = noisier but fits in memory.</td>
+              </tr>
+              <tr class="hover:bg-slate-50 dark:hover:bg-slate-800">
+                <td class="p-3 font-medium">Warmup Steps</td>
+                <td class="p-3"><code class="text-xs bg-slate-200 dark:bg-slate-600 px-1.5 py-0.5 rounded">5%–10% of total</code></td>
+                <td class="p-3">Lets the optimizer "ease in" instead of yeeting gradients at full speed immediately.</td>
+              </tr>
+              <tr class="hover:bg-slate-50 dark:hover:bg-slate-800">
+                <td class="p-3 font-medium">Weight Decay</td>
+                <td class="p-3"><code class="text-xs bg-slate-200 dark:bg-slate-600 px-1.5 py-0.5 rounded">0.01 → 0.1</code></td>
+                <td class="p-3">Regularization to prevent overfitting. Think of it as a "don't go too crazy" tax.</td>
+              </tr>
+              <tr class="hover:bg-slate-50 dark:hover:bg-slate-800">
+                <td class="p-3 font-medium">Max Seq Length</td>
+                <td class="p-3"><code class="text-xs bg-slate-200 dark:bg-slate-600 px-1.5 py-0.5 rounded">512 → 2048</code></td>
+                <td class="p-3">VRAM scales quadratically with attention. Longer context = exponentially more memory.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Memory Requirements -->
+      <div class="technique-card border-l-4 border-yellow-500">
+        <h3 class="text-xl font-bold text-yellow-600 dark:text-yellow-400 mb-3">💾 Memory Requirements</h3>
+        <p class="text-slate-600 dark:text-slate-300 mb-4">
+          Full fine-tuning is the most memory-hungry technique. Here's why: you need to store the model weights, the gradients, <em>and</em> the optimizer states (Adam keeps two momentum buffers per parameter). That's roughly <strong>4× the model size</strong> in VRAM.
+        </p>
+        <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mb-4">
+          <p class="text-sm text-yellow-800 dark:text-yellow-200 font-medium mb-2">📐 Quick math for FP32 training:</p>
+          <ul class="text-sm text-yellow-700 dark:text-yellow-300 space-y-1 list-disc list-inside">
+            <li>Model weights: <strong>4 bytes × params</strong></li>
+            <li>Gradients: <strong>4 bytes × params</strong></li>
+            <li>Optimizer states (Adam): <strong>8 bytes × params</strong></li>
+            <li>Activations: varies with batch size &amp; seq length</li>
+            <li><strong>Total ≈ 16–20 bytes per parameter</strong> (before activations)</li>
+          </ul>
+        </div>
+
+        <!-- Memory comparison image -->
+        <figure class="my-6">
+          <img src="images/memory-comparison.svg" alt="Memory comparison across fine-tuning techniques: Full FT vs LoRA vs QLoRA vs Prompt Tuning" class="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-2">
+          <figcaption class="text-xs text-slate-500 dark:text-slate-400 mt-2 text-center italic">
+            Memory footprint comparison across techniques. Full fine-tuning sits firmly at "bring your biggest GPU" territory.
+          </figcaption>
+        </figure>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm border-collapse rounded-lg overflow-hidden">
+            <thead>
+              <tr class="bg-slate-100 dark:bg-slate-700">
+                <th class="text-left p-3 font-semibold">Model Size</th>
+                <th class="text-left p-3 font-semibold">FP32 VRAM</th>
+                <th class="text-left p-3 font-semibold">BF16 VRAM</th>
+                <th class="text-left p-3 font-semibold">Fits on…</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200 dark:divide-slate-600">
+              <tr class="hover:bg-slate-50 dark:hover:bg-slate-800">
+                <td class="p-3 font-medium">135M (SmolLM2)</td>
+                <td class="p-3">~2.5 GB</td>
+                <td class="p-3">~1.5 GB</td>
+                <td class="p-3">Any modern GPU, even Colab free tier 🎉</td>
+              </tr>
+              <tr class="hover:bg-slate-50 dark:hover:bg-slate-800">
+                <td class="p-3 font-medium">360M (SmolLM2)</td>
+                <td class="p-3">~6 GB</td>
+                <td class="p-3">~3.5 GB</td>
+                <td class="p-3">RTX 3060 / T4</td>
+              </tr>
+              <tr class="hover:bg-slate-50 dark:hover:bg-slate-800">
+                <td class="p-3 font-medium">1.7B (SmolLM2)</td>
+                <td class="p-3">~28 GB</td>
+                <td class="p-3">~16 GB</td>
+                <td class="p-3">A100 / RTX 4090 (tight)</td>
+              </tr>
+              <tr class="hover:bg-slate-50 dark:hover:bg-slate-800">
+                <td class="p-3 font-medium">7B</td>
+                <td class="p-3">~112 GB</td>
+                <td class="p-3">~56 GB</td>
+                <td class="p-3">Multi-GPU or DeepSpeed ZeRO 🔥</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Common Pitfalls -->
+      <div class="technique-card border-l-4 border-red-400">
+        <h3 class="text-xl font-bold text-red-600 dark:text-red-400 mb-3">⚠️ Common Pitfalls</h3>
+        <p class="text-slate-600 dark:text-slate-300 mb-4">
+          Full fine-tuning is powerful but unforgiving. Here's where people (including me, repeatedly) shoot themselves in the foot:
+        </p>
+
+        <div class="space-y-4">
+          <!-- Pitfall 1 -->
+          <div class="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-lg p-4">
+            <h4 class="font-bold text-red-700 dark:text-red-300 mb-1">🧠 Catastrophic Forgetting</h4>
+            <p class="text-sm text-slate-600 dark:text-slate-300 mb-2">
+              The model becomes great at your task but forgets how to do basic things. Like teaching someone advanced calculus and they forget how to add.
+            </p>
+            <p class="text-sm text-slate-500 dark:text-slate-400">
+              <strong>Fix:</strong> Mix in a small fraction (5–10%) of general-purpose data during training. Use a low learning rate. Evaluate on diverse benchmarks, not just your task.
+            </p>
+          </div>
+
+          <!-- Pitfall 2 -->
+          <div class="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-lg p-4">
+            <h4 class="font-bold text-red-700 dark:text-red-300 mb-1">📈 Overfitting</h4>
+            <p class="text-sm text-slate-600 dark:text-slate-300 mb-2">
+              With all parameters free to move, the model can easily memorize your training set verbatim — especially if it's small. Your training loss looks beautiful; your validation loss tells a horror story.
+            </p>
+            <p class="text-sm text-slate-500 dark:text-slate-400">
+              <strong>Fix:</strong> Use weight decay, reduce epochs, increase data diversity, monitor train/val gap obsessively.
+            </p>
+          </div>
+
+          <!-- Pitfall 3 -->
+          <div class="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-lg p-4">
+            <h4 class="font-bold text-red-700 dark:text-red-300 mb-1">💥 Learning Rate Divergence</h4>
+            <p class="text-sm text-slate-600 dark:text-slate-300 mb-2">
+              Set the learning rate too high and your loss goes to NaN faster than you can say "gradient explosion." The pre-trained weights get obliterated in the first few steps.
+            </p>
+            <p class="text-sm text-slate-500 dark:text-slate-400">
+              <strong>Fix:</strong> Start with 2e-5 and tune from there. Always use warmup (5–10% of steps). Use cosine or linear decay schedule. If loss spikes, halve the LR.
+            </p>
+          </div>
+
+          <!-- Pitfall 4 -->
+          <div class="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-lg p-4">
+            <h4 class="font-bold text-red-700 dark:text-red-300 mb-1">🗃️ Checkpoint Storage</h4>
+            <p class="text-sm text-slate-600 dark:text-slate-300 mb-2">
+              Every checkpoint is a full copy of the model. A 1.7B model with 5 checkpoints = 34GB of disk space just for saved states. Your disk will fill up faster than a free buffet at a developer conference.
+            </p>
+            <p class="text-sm text-slate-500 dark:text-slate-400">
+              <strong>Fix:</strong> Only keep the best 2–3 checkpoints. Use <code>save_total_limit</code> in HuggingFace Trainer.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Try It Yourself -->
+      <div class="technique-card border-l-4 border-indigo-500 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20">
+        <h3 class="text-xl font-bold text-indigo-600 dark:text-indigo-400 mb-3">🚀 Try It Yourself</h3>
+        <p class="text-slate-600 dark:text-slate-300 mb-4">
+          Ready to get your hands dirty? Our notebook walks you through full fine-tuning of SmolLM2-135M on a real task, step by step. You'll see exactly how the training loop works, watch the loss curve (hopefully) go down, and learn to spot when things go wrong.
+        </p>
+        <a href="notebooks/02_full_finetuning.ipynb" class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-5 py-3 rounded-lg transition-colors shadow-md hover:shadow-lg">
+          <span>📓</span>
+          <span>Open Notebook 02: Full Fine-Tuning</span>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+        </a>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-3">
+          💡 Runs on Google Colab free tier (T4 GPU) — no expensive hardware required for SmolLM2-135M.
+        </p>
+      </div>
+
+    </section>
+
+    <!-- Upcoming Techniques Teaser -->
+    <section class="border-t-2 border-slate-200 dark:border-slate-700 pt-12">
+      <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-4">Coming Up Next…</h2>
+      <p class="text-slate-600 dark:text-slate-300 mb-6">
+        Full fine-tuning is the foundation, but there are far more elegant (and memory-friendly) approaches. Stay tuned as we add:
+      </p>
+      <div class="grid gap-4 md:grid-cols-2">
+        <div class="technique-card opacity-60 border-l-4 border-slate-300 dark:border-slate-600">
+          <h3 class="font-bold text-slate-500 dark:text-slate-400">🧩 LoRA & QLoRA</h3>
+          <p class="text-sm text-slate-400 dark:text-slate-500">Low-rank adapters — 90%+ memory savings with ~95% of the quality. The "have your cake and eat it" technique.</p>
+        </div>
+        <div class="technique-card opacity-60 border-l-4 border-slate-300 dark:border-slate-600">
+          <h3 class="font-bold text-slate-500 dark:text-slate-400">✨ Prompt Tuning</h3>
+          <p class="text-sm text-slate-400 dark:text-slate-500">Learn a handful of virtual tokens. The model stays frozen, your prompt does the heavy lifting.</p>
+        </div>
+        <div class="technique-card opacity-60 border-l-4 border-slate-300 dark:border-slate-600">
+          <h3 class="font-bold text-slate-500 dark:text-slate-400">🔌 Adapter Layers</h3>
+          <p class="text-sm text-slate-400 dark:text-slate-500">Inject tiny trainable modules between frozen layers. Modular, composable, elegant.</p>
+        </div>
+        <div class="technique-card opacity-60 border-l-4 border-slate-300 dark:border-slate-600">
+          <h3 class="font-bold text-slate-500 dark:text-slate-400">⚖️ DPO / RLHF</h3>
+          <p class="text-sm text-slate-400 dark:text-slate-500">Align outputs to human preferences. Because "technically correct" and "actually helpful" are different things.</p>
+        </div>
+      </div>
+    </section>
+
   </main>
+
+  <!-- Footer -->
+  <footer class="bg-gray-900 text-gray-300 py-12 mt-20">
+    <div class="max-w-4xl mx-auto px-6">
+      <div class="grid gap-8 md:grid-cols-3 mb-8">
+        <div>
+          <h4 class="font-bold text-white mb-3">Learn</h4>
+          <ul class="space-y-2 text-sm">
+            <li><a href="techniques.html" class="hover:text-blue-300 transition-colors">Techniques Deep Dive</a></li>
+            <li><a href="comparison.html" class="hover:text-blue-300 transition-colors">Method Comparison</a></li>
+            <li><a href="choosing-method.html" class="hover:text-blue-300 transition-colors">Choosing a Method</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="font-bold text-white mb-3">Practice</h4>
+          <ul class="space-y-2 text-sm">
+            <li><a href="notebooks/02_full_finetuning.ipynb" class="hover:text-blue-300 transition-colors">Full Fine-Tuning Notebook</a></li>
+            <li><a href="guide.html" class="hover:text-blue-300 transition-colors">Step-by-Step Guide</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="font-bold text-white mb-3">Stay Safe</h4>
+          <ul class="space-y-2 text-sm">
+            <li><a href="safety.html" class="hover:text-blue-300 transition-colors">Safety & Ethics</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="border-t border-gray-700 pt-6 text-center text-sm text-gray-500">
+        <p>SLM Fine-Tuning Tutorial — Built with ☕ and curiosity</p>
+      </div>
+    </div>
+  </footer>
+
   <script src="js/main.js"></script>
 </body>
 </html>
