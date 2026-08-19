@@ -6,18 +6,18 @@
 
 ## 🚦 Implementation Progress
 
-> **Last updated**: 2026-07-24 | **Current phase**: Phase 1, Step 3
+> **Last updated**: 2026-08-19 | **Current phase**: Phase 4, Step 9
 
 | Phase | Step | Deliverable | Status |
 |---|---|---|---|
 | 1 | Step 1 | Project scaffolding (dirs, src/, configs, notebooks) | ✅ Done |
 | 1 | Step 2 | `00_environment_setup.ipynb` | ✅ Done — verified on M4 Max |
-| 1 | Step 3 | `01_dataset_design_and_data_prep.ipynb` | 🔜 Next |
-| 2 | Step 4 | `02_full_finetuning.ipynb` | ⬜ Not started |
-| 2 | Step 5 | `03_feature_extraction_linear_probing.ipynb` | ⬜ Not started |
-| 3 | Step 6 | `04_lora_and_dora_finetuning.ipynb` | ⬜ Not started |
-| 3 | Step 7 | `05_qlora_finetuning.ipynb` | ⬜ Not started |
-| 4 | Step 9 | `06_prompt_tuning.ipynb` | ⬜ Not started |
+| 1 | Step 3 | `01_dataset_design_and_data_prep.ipynb` | ✅ Done — verified on M4 Max |
+| 2 | Step 4 | `02_full_finetuning.ipynb` | ✅ Done — pipeline verified (1-epoch run), full training deferred |
+| 2 | Step 5 | `03_feature_extraction_linear_probing.ipynb` | ✅ Done — verified on M4 Max |
+| 3 | Step 6 | `04_lora_and_dora_finetuning.ipynb` | ✅ Done — verified on M4 Max |
+| 3 | Step 7 | `05_qlora_finetuning.ipynb` | ✅ Done — verified on M4 Max |
+| 4 | Step 9 | `06_prompt_tuning.ipynb` | 🔜 Next |
 | 4 | Step 10 | `07_prefix_tuning.ipynb` | ⬜ Not started |
 | 5 | Step 11 | `08_dpo_alignment.ipynb` | ⬜ Not started |
 | 5 | Step 12 | `09_knowledge_distillation.ipynb` | ⬜ Not started |
@@ -45,7 +45,7 @@
 
 **Pipeline per step**: Developer → Reviewer → (fix gaps) → Documentation + Visualization → Humanizer → Commit
 
-**Next action**: Implement `notebooks/01_dataset_design_and_data_prep.ipynb` following Phase 1 Step 3 below.
+**Next action**: Validate and run `notebooks/06_prompt_tuning.ipynb` following Phase 4 Step 9 below.
 
 ---
 
