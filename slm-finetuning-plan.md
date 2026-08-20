@@ -6,7 +6,7 @@
 
 ## 🚦 Implementation Progress
 
-> **Last updated**: 2026-08-19 | **Current phase**: Phase 4, Step 9
+> **Last updated**: 2026-08-20 | **Current phase**: Phase 5, Step 11
 
 | Phase | Step | Deliverable | Status |
 |---|---|---|---|
@@ -17,9 +17,9 @@
 | 2 | Step 5 | `03_feature_extraction_linear_probing.ipynb` | ✅ Done — verified on M4 Max |
 | 3 | Step 6 | `04_lora_and_dora_finetuning.ipynb` | ✅ Done — verified on M4 Max |
 | 3 | Step 7 | `05_qlora_finetuning.ipynb` | ✅ Done — verified on M4 Max |
-| 4 | Step 9 | `06_prompt_tuning.ipynb` | 🔜 Next |
-| 4 | Step 10 | `07_prefix_tuning.ipynb` | ⬜ Not started |
-| 5 | Step 11 | `08_dpo_alignment.ipynb` | ⬜ Not started |
+| 4 | Step 9 | `06_prompt_tuning.ipynb` | ✅ Done — verified on M4 Max |
+| 4 | Step 10 | `07_prefix_tuning.ipynb` | ✅ Done — verified on M4 Max |
+| 5 | Step 11 | `08_dpo_alignment.ipynb` | 🔜 Next |
 | 5 | Step 12 | `09_knowledge_distillation.ipynb` | ⬜ Not started |
 | 5 | Step 13 | `10_model_merging.ipynb` | ⬜ Not started |
 | 6 | Step 14 | `12_responsible_safe_finetuning.ipynb` | ⬜ Not started |
@@ -45,7 +45,7 @@
 
 **Pipeline per step**: Developer → Reviewer → (fix gaps) → Documentation + Visualization → Humanizer → Commit
 
-**Next action**: Validate and run `notebooks/06_prompt_tuning.ipynb` following Phase 4 Step 9 below.
+**Next action**: Validate and run `notebooks/08_dpo_alignment.ipynb` following Phase 5 Step 11 below.
 
 ---
 
