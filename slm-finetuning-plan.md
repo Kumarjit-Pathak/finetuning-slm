@@ -6,7 +6,7 @@
 
 ## 🚦 Implementation Progress
 
-> **Last updated**: 2026-08-20 | **Current phase**: Phase 5, Step 11
+> **Last updated**: 2026-08-26 | **Current phase**: Phase 9, Step 19
 
 | Phase | Step | Deliverable | Status |
 |---|---|---|---|
@@ -19,13 +19,13 @@
 | 3 | Step 7 | `05_qlora_finetuning.ipynb` | ✅ Done — verified on M4 Max |
 | 4 | Step 9 | `06_prompt_tuning.ipynb` | ✅ Done — verified on M4 Max |
 | 4 | Step 10 | `07_prefix_tuning.ipynb` | ✅ Done — verified on M4 Max |
-| 5 | Step 11 | `08_dpo_alignment.ipynb` | 🔜 Next |
-| 5 | Step 12 | `09_knowledge_distillation.ipynb` | ⬜ Not started |
-| 5 | Step 13 | `10_model_merging.ipynb` | ⬜ Not started |
-| 6 | Step 14 | `12_responsible_safe_finetuning.ipynb` | ⬜ Not started |
-| 7 | Step 15 | `11_failure_points_and_debugging.ipynb` | ⬜ Not started |
-| 8 | Step 16 | `13_evaluation_theory_and_benchmarking.ipynb` | ⬜ Not started |
-| 9 | Steps 17–19 | Notebooks 14–16 (fun use cases) | ⬜ Not started |
+| 5 | Step 11 | `08_dpo_alignment.ipynb` | ✅ Done — verified on M4 Max |
+| 5 | Step 12 | `09_knowledge_distillation.ipynb` | ✅ Done — verified on M4 Max |
+| 5 | Step 13 | `10_model_merging.ipynb` | ✅ Done — verified on M4 Max |
+| 6 | Step 14 | `12_responsible_safe_finetuning.ipynb` | 🔜 Next |
+| 7 | Step 15 | `11_failure_points_and_debugging.ipynb` | ✅ Done — verified on M4 Max |
+| 8 | Step 16 | `13_evaluation_theory_and_benchmarking.ipynb` | ✅ Done — verified on M4 Max |
+| 9 | Steps 17–19 | Notebooks 14–16 (fun use cases) | 🔜 In progress (14, 15 done) |
 | 10 | Steps 20–21 | Notebooks 17–18 (industry use cases) | ⬜ Not started |
 | 11 | Step 22 | `19_apple_silicon_optimization_guide.ipynb` | ⬜ Not started |
 | 12 | Steps 23–26 | docs/ HTML site (9 pages) | ⬜ Not started |
@@ -45,7 +45,7 @@
 
 **Pipeline per step**: Developer → Reviewer → (fix gaps) → Documentation + Visualization → Humanizer → Commit
 
-**Next action**: Validate and run `notebooks/08_dpo_alignment.ipynb` following Phase 5 Step 11 below.
+**Next action**: Build `notebooks/16_fun_dungeon_master.ipynb` following Phase 9 Step 19 below.
 
 ---
 
