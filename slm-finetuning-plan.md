@@ -6,7 +6,7 @@
 
 ## 🚦 Implementation Progress
 
-> **Last updated**: 2026-08-27 | **Current phase**: Phase 12, Step 23
+> **Last updated**: 2026-09-09 | **Current phase**: Phase 13, Steps 27–28
 
 | Phase | Step | Deliverable | Status |
 |---|---|---|---|
@@ -28,8 +28,8 @@
 | 9 | Steps 17–19 | Notebooks 14–16 (fun use cases) | ✅ Done — 14, 15, 16 verified on M4 Max |
 | 10 | Steps 20–21 | Notebooks 17–18 (industry use cases) | ✅ Done — 17, 18 verified on M4 Max |
 | 11 | Step 22 | `19_apple_silicon_optimization_guide.ipynb` | ✅ Done — verified on M4 Max |
-| 12 | Steps 23–26 | docs/ HTML site (9 pages) | ⬜ Not started |
-| 13 | Steps 27–28 | Polish & final validation | ⬜ Not started |
+| 12 | Steps 23–26 | docs/ HTML site (9 pages + 404 + workflow) | ✅ Done — shipped 2026-09-09, deploy pending first push |
+| 13 | Steps 27–28 | Polish & final validation | 🔜 Next |
 
 ### How to Continue Development
 
@@ -45,7 +45,118 @@
 
 **Pipeline per step**: Developer → Reviewer → (fix gaps) → Documentation + Visualization → Humanizer → Commit
 
-**Next action**: Build docs/ HTML site starting with Phase 12 Step 23 (site infrastructure and pages).
+**Next action**: Phase 13 — Polish & final validation. See the **📅 Resume-tomorrow snapshot** section immediately below for exact remaining work, key facts, and traps to avoid.
+
+---
+
+## 📅 Resume-tomorrow snapshot (2026-09-09)
+
+> Read this first before doing anything else. It replaces re-reading code.
+
+### What is 100% done
+
+**Notebooks (all 20 built, verified end-to-end on M4 Max):**
+- `00_environment_setup` → `19_apple_silicon_optimization_guide` — all executed, all outputs saved.
+- 18 result PNGs sitting in `notebooks/*.png` (also copied to `docs/images/notebooks/`).
+
+**Docs site (`docs/` folder, 10 HTML pages):**
+- `index.html` — landing with rotating quotes + big-number stats + "pick a technique for me" button.
+- `guide.html` — 3 tracks (beginner/intermediate/advanced), interactive checklist with `localStorage` persistence, Mermaid prereq graph, FAQ accordions.
+- `techniques.html` — 10 tabs (LoRA · DoRA · QLoRA · Full FT · Linear probe · Prompt · Prefix · DPO · Distillation · Merging), each with SVG + KaTeX math + code block + result PNG + interactive Chart.js on LoRA.
+- `comparison.html` — sortable table, VRAM filter slider, Pareto scatter, radar-picker (up to 3 techniques × 6 dimensions), cost calculator with log-scale line chart.
+- `choosing-method.html` — 4-question wizard with priority-ordered decision logic, 12 task cards (click-to-reveal), Mermaid flowchart, rules of thumb.
+- `safety.html` — concentric risk-ring SVG, 9-card risk taxonomy, 10-card mitigations, 12-item governance checklist with `localStorage`.
+- `failure-points.html` — 10 accordion failure cards with severity filter, interactive quiz with 5 live Chart.js training curves.
+- `fun-usecases.html` — 3 showcases (Shakespeare / Code Roast / Dungeon Master) each with prompt picker + pre-generated base/tuned outputs + honest capacity notes.
+- `industry-usecases.html` — KPI cards, Mermaid architecture diagrams, ROI calculator with live-updating log-scale bar chart.
+- `404.html` — friendly error page with gradient 404, tagline, popular-destination cards.
+
+**Custom SVG diagrams (`docs/images/diagrams/`, 7 files):**
+1. `taxonomy_tree.svg` — all 10 techniques grouped into 6 families (used in `techniques.html` hero).
+2. `lora_architecture.svg` — frozen W + trainable A×B (LoRA tab).
+3. `dora_vs_lora.svg` — side-by-side decomposition (DoRA tab).
+4. `qlora_flow.svg` — 4-step quantization pipeline + memory bars (QLoRA tab).
+5. `dpo_loop.svg` — policy vs reference log-ratio flow (DPO tab).
+6. `model_merging.svg` — 3-panel SLERP/TIES/DARE comparison (Merging tab).
+7. `safety_taxonomy_rings.svg` — concentric severity rings (safety.html).
+
+**Site infrastructure:**
+- `docs/css/style.css` (14 KB) — full design system with 20 sections including search overlay styles.
+- `docs/css/print.css` (4 KB) — ink-friendly print styles; hides interactive elements, expands accordions, prints link URLs.
+- `docs/js/main.js` (9 KB) — dark-mode toggle, tab system with URL-hash deep-linking, copy buttons, sortable tables, progress tracker with `localStorage`, KaTeX + Mermaid auto-init.
+- `docs/js/search.js` (7.7 KB) — self-injecting search modal with `/` shortcut, weighted term scoring, match highlighting.
+- `docs/js/search-index.js` (5.8 KB) — 9-entry search index auto-generated from HTML titles + descriptions + headings.
+- `docs/.nojekyll` — Pages config marker.
+- `.github/workflows/pages.yml` (5.2 KB) — auto-deploy on push to `main` with 3 pre-deploy sanity checks: emoji audit, absolute-URL audit, search-index rebuild.
+
+**Constraints enforced across the whole site (verified by CI):**
+- No emojis anywhere in HTML / CSS / JS / SVG source files.
+- No absolute URL paths (`href="/foo"`) that would break at the `/finetuning-slm/` sub-path.
+- Every page includes `main.js`, `search.js`, `style.css`, `print.css`.
+
+### What remains (Phase 13, Steps 27–28)
+
+**Step 27 — Documentation & Packaging** (est. 2–3 hours):
+- [ ] Refresh top-level `README.md` — currently minimal. Needs: badges (build status, license, Python version), TOC, quickstart (`git clone` → `./setup.sh` → open notebook 00), screenshot of the docs site or a key notebook PNG, link to live Pages URL once deployed.
+- [ ] BibTeX citation block in README (for academic reuse).
+- [ ] Add `CONTRIBUTING.md` — code style, notebook conventions, how to add a new technique.
+- [ ] Add `LICENSE` — MIT.
+- [ ] Verify `.gitignore` covers: `outputs/`, `.venv/`, `__pycache__/`, `.DS_Store`, `.ipynb_checkpoints/`, `*.egg-info/`, HF cache paths.
+- [ ] Write `data/README.md` documenting synthetic-data provenance for notebooks 14–18 (Shakespeare pairs, code roasts, DM narrations, clinical notes, tool schemas). No PHI, no licensed content reproduced verbatim.
+
+**Step 28 — Final Validation** (est. 3–4 hours):
+- [ ] Re-run all 20 notebooks end-to-end on M4 Max (fresh kernel per notebook). Confirm each still executes cleanly and produces the expected PNG.
+- [ ] Confirm no notebook exceeds ~35 GB peak unified memory (M4 Max has 39 GB usable).
+- [ ] Verify notebook 12 still shows measurable guardrail erosion + recovery.
+- [ ] Verify notebook 11 fail-fixed examples still reproduce.
+- [ ] Verify notebook 13 shows clear ID vs OOD divergence.
+- [ ] Fresh-clone test: `git clone`, `./setup.sh`, open notebook 00 — does it work end-to-end for a new user with no HF cache warmup?
+- [ ] Cross-browser: docs site renders in Chrome, Safari, Firefox at desktop + mobile widths.
+- [ ] First live deploy: push to `main`, watch the workflow succeed, visit the live URL, run the 5-step smoke test from Round 6 message.
+- [ ] Take screenshots of the deployed site for the README hero.
+
+### Key facts that stopped us wasting time (do not re-discover)
+
+- **trl 1.9.x renames**: `SFTConfig(max_seq_length=...)` → `max_length`. `DPOConfig` dropped `max_prompt_length` entirely — just use `max_length`.
+- **Gradient checkpointing gotcha**: after every `SFTTrainer.train()` or `DPOTrainer.train()`, must call:
+  ```python
+  model.gradient_checkpointing_disable()
+  model.config.use_cache = True
+  model.eval()
+  ```
+  Otherwise `model.generate()` produces garbage tokens (transformers detects checkpointing on and forces `use_cache=False`).
+- **Chat template required**: SmolLM2-Instruct trained on ChatML — always use `tokenizer.apply_chat_template([...])` for both training data formatting and inference prompt construction.
+- **135M capacity wall**: Structural / vocabulary transfer works (notebooks 15, 17, 18). Stylistic tone transfer does not (notebooks 14, 15 roast tone, 16 Dungeon Master narration hits ceiling). Documented honestly in the site.
+- **MPS / MLX**: PyTorch/MPS beat MLX at 135M (103 vs 68 tok/s) — MLX advantage grows with model size. Float16 MPS is ~5000× faster than CPU float16 matmul because CPU has no native fp16 matmul.
+- **Model fallback pattern**: every notebook tries `SmolLM2-360M-Instruct` first then falls back to `SmolLM2-135M-Instruct` if not cached offline. 360M weights are not currently cached.
+- **Bug that took 3 tries**: `extract_json` in notebook 17 must check `isinstance(result, dict)` before `.get()` — `json.loads("just a string")` returns a str, not a dict.
+
+### Site deployment status
+
+- Workflow file is committed but **the site has not yet been deployed** (Pages source needs to be set to `GitHub Actions` in repo Settings, then first push triggers deploy).
+- Once deployed, live URL will be `https://kumarjit88.github.io/finetuning-slm/` (assuming username `kumarjit88`).
+- Workflow includes 3 pre-deploy checks that will fail the build if emojis/absolute-URLs slip in.
+
+### Files list for tomorrow (for quick orientation)
+
+```
+docs/                       (10 HTML + 2 CSS + 3 JS + 25 images = ~3.0 MB)
+  ├─ 404.html, index.html, guide.html
+  ├─ techniques.html, comparison.html, choosing-method.html
+  ├─ safety.html, failure-points.html
+  ├─ fun-usecases.html, industry-usecases.html
+  ├─ css/{style,print}.css
+  ├─ js/{main,search,search-index}.js
+  ├─ images/diagrams/*.svg (7 custom SVGs)
+  ├─ images/notebooks/*.png (18 result charts)
+  └─ .nojekyll
+
+.github/workflows/pages.yml (5 KB — build + deploy job)
+notebooks/00–19*.ipynb      (20 notebooks, all executed)
+slm-finetuning-plan.md      (this file — canonical progress log)
+```
+
+**How to pick up tomorrow in one sentence**: open this file, read the `Resume-tomorrow snapshot` section, then start on Step 27 by refreshing `README.md`.
 
 ---
 
