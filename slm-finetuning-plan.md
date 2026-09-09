@@ -6,7 +6,7 @@
 
 ## 🚦 Implementation Progress
 
-> **Last updated**: 2026-08-26 | **Current phase**: Phase 9, Step 19
+> **Last updated**: 2026-08-27 | **Current phase**: Phase 12, Step 23
 
 | Phase | Step | Deliverable | Status |
 |---|---|---|---|
@@ -25,9 +25,9 @@
 | 6 | Step 14 | `12_responsible_safe_finetuning.ipynb` | 🔜 Next |
 | 7 | Step 15 | `11_failure_points_and_debugging.ipynb` | ✅ Done — verified on M4 Max |
 | 8 | Step 16 | `13_evaluation_theory_and_benchmarking.ipynb` | ✅ Done — verified on M4 Max |
-| 9 | Steps 17–19 | Notebooks 14–16 (fun use cases) | 🔜 In progress (14, 15 done) |
-| 10 | Steps 20–21 | Notebooks 17–18 (industry use cases) | ⬜ Not started |
-| 11 | Step 22 | `19_apple_silicon_optimization_guide.ipynb` | ⬜ Not started |
+| 9 | Steps 17–19 | Notebooks 14–16 (fun use cases) | ✅ Done — 14, 15, 16 verified on M4 Max |
+| 10 | Steps 20–21 | Notebooks 17–18 (industry use cases) | ✅ Done — 17, 18 verified on M4 Max |
+| 11 | Step 22 | `19_apple_silicon_optimization_guide.ipynb` | ✅ Done — verified on M4 Max |
 | 12 | Steps 23–26 | docs/ HTML site (9 pages) | ⬜ Not started |
 | 13 | Steps 27–28 | Polish & final validation | ⬜ Not started |
 
@@ -45,7 +45,7 @@
 
 **Pipeline per step**: Developer → Reviewer → (fix gaps) → Documentation + Visualization → Humanizer → Commit
 
-**Next action**: Build `notebooks/16_fun_dungeon_master.ipynb` following Phase 9 Step 19 below.
+**Next action**: Build docs/ HTML site starting with Phase 12 Step 23 (site infrastructure and pages).
 
 ---
 
