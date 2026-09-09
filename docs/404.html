@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Page not found — Fine-Tuning Small Language Models</title>
+  <meta name="description" content="This page does not exist. A quick guide to where you probably meant to go.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&family=Lora:ital,wght@1,500&display=swap" rel="stylesheet">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { darkMode: ['selector', '[data-theme="dark"]'] };</script>
+
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/print.css" media="print">
+  <script defer src="js/main.js"></script>
+  <script defer src="js/search.js"></script>
+
+  <style>
+    .four04 {
+      font-size: clamp(6rem, 22vw, 12rem);
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: -0.06em;
+      background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+  </style>
+</head>
+
+<body class="antialiased">
+
+  <!-- Nav -->
+  <header class="nav-shell sticky top-0 z-40">
+    <div class="container-wide flex items-center justify-between py-3">
+      <a href="index.html" class="font-bold tracking-tight text-lg" style="color: var(--color-text);">
+        Fine-Tuning SLMs
+      </a>
+      <nav class="hidden md:flex items-center gap-6 text-sm font-medium">
+        <a href="index.html" class="nav-link">Home</a>
+        <a href="techniques.html" class="nav-link">Techniques</a>
+        <a href="comparison.html" class="nav-link">Comparison</a>
+        <a href="choosing-method.html" class="nav-link">Which Method?</a>
+        <a href="safety.html" class="nav-link">Safety</a>
+        <a href="failure-points.html" class="nav-link">Failure Points</a>
+        <a href="fun-usecases.html" class="nav-link">Fun</a>
+        <a href="industry-usecases.html" class="nav-link">Industry</a>
+        <a href="guide.html" class="nav-link">Guide</a>
+      </nav>
+      <button type="button" class="btn btn-ghost text-xs" data-theme-toggle onclick="slmToggleTheme()">Dark mode</button>
+    </div>
+  </header>
+
+  <section class="container-wide pt-16 pb-10 text-center">
+    <div class="four04">404</div>
+    <span class="eyebrow">page not found</span>
+    <h1 class="hero-tagline mt-3 max-w-3xl mx-auto">
+      This page was<br>
+      <span style="color: var(--color-primary);">rejected during training.</span>
+    </h1>
+    <p class="mt-4 text-slate-600 dark:text-slate-300 text-lg max-w-2xl mx-auto">
+      You followed a link that either never existed or was fine-tuned out of the model. Either way, here
+      is where you probably meant to go.
+    </p>
+
+    <div class="mt-8 flex flex-wrap gap-3 justify-center">
+      <a href="index.html" class="btn btn-primary">Back to home</a>
+      <a href="guide.html" class="btn btn-outline">Open the guide</a>
+      <a href="techniques.html" class="btn btn-outline">Browse techniques</a>
+      <button type="button" class="btn btn-ghost" onclick="slmOpenSearch()">Search the site</button>
+    </div>
+  </section>
+
+  <section class="container-wide py-10">
+    <div class="max-w-3xl mx-auto">
+      <h2 class="section-heading">Popular destinations</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <a href="techniques.html#lora" class="card card--hover">
+          <div class="text-xs font-bold uppercase tracking-widest text-blue-500">Most-visited technique</div>
+          <div class="font-semibold mt-1">LoRA deep-dive</div>
+          <p class="text-sm text-slate-500 mt-1">The one you probably wanted.</p>
+        </a>
+        <a href="choosing-method.html" class="card card--hover">
+          <div class="text-xs font-bold uppercase tracking-widest text-blue-500">Interactive</div>
+          <div class="font-semibold mt-1">Method recommender</div>
+          <p class="text-sm text-slate-500 mt-1">Four questions, one answer.</p>
+        </a>
+        <a href="comparison.html" class="card card--hover">
+          <div class="text-xs font-bold uppercase tracking-widest text-blue-500">The table</div>
+          <div class="font-semibold mt-1">Comparison of all ten techniques</div>
+          <p class="text-sm text-slate-500 mt-1">Sort by whatever matters most.</p>
+        </a>
+        <a href="failure-points.html" class="card card--hover">
+          <div class="text-xs font-bold uppercase tracking-widest text-blue-500">Debug</div>
+          <div class="font-semibold mt-1">What went wrong?</div>
+          <p class="text-sm text-slate-500 mt-1">Ten failure modes and their fixes.</p>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <blockquote class="callout container-reading mt-4">
+    <span class="callout-label">Consolation</span>
+    Getting a 404 on a machine-learning site feels appropriate. At least the loss did not explode.
+  </blockquote>
+
+  <footer class="site-footer">
+    <div class="container-wide flex flex-wrap items-center justify-between gap-3">
+      <div>Fine-tuning small language models without losing your mind (or your GPU).</div>
+      <nav class="flex gap-4 text-xs">
+        <a class="nav-link" href="index.html">Home</a>
+        <a class="nav-link" href="https://github.com/kumarjit88/finetuning-slm" target="_blank" rel="noopener">GitHub</a>
+      </nav>
+    </div>
+  </footer>
+</body>
+</html>

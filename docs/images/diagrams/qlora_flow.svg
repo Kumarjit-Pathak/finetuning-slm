@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" role="img" aria-labelledby="qlora-title qlora-desc">
+  <title id="qlora-title">QLoRA quantization pipeline</title>
+  <desc id="qlora-desc">A left-to-right flow diagram. A pretrained fp16 model is quantized to NF4 4-bit, then its quantization constants are themselves quantized (double quantization). The frozen NF4 base is combined with a trainable fp16 LoRA adapter. During inference the LoRA is added on top of dequantized weights.</desc>
+
+  <defs>
+    <linearGradient id="fp16" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#94a3b8"/>
+      <stop offset="1" stop-color="#64748b"/>
+    </linearGradient>
+    <linearGradient id="nf4" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#a78bfa"/>
+      <stop offset="1" stop-color="#7c3aed"/>
+    </linearGradient>
+    <linearGradient id="lora-q" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#60a5fa"/>
+      <stop offset="1" stop-color="#3b82f6"/>
+    </linearGradient>
+    <marker id="arrow-q" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#475569"/>
+    </marker>
+  </defs>
+
+  <style>
+    .lbl        { font: 500 12px 'Inter', system-ui, sans-serif; fill: #0f172a; }
+    .lbl-small  { font: 500 10px 'Inter', system-ui, sans-serif; fill: #475569; }
+    .lbl-white  { font: 700 13px 'Inter', system-ui, sans-serif; fill: #ffffff; }
+    .lbl-white-s{ font: 500 10px 'Inter', system-ui, sans-serif; fill: #ffffff; }
+    .lbl-header { font: 700 16px 'Inter', system-ui, sans-serif; letter-spacing: -0.02em; fill: #0f172a; }
+    .lbl-caption{ font: 600 11px 'Inter', system-ui, sans-serif; letter-spacing: .08em; text-transform: uppercase; fill: #475569; }
+    .flow-line  { fill: none; stroke: #475569; stroke-width: 2; }
+    [data-theme="dark"] .lbl,
+    [data-theme="dark"] .lbl-header { fill: #f1f5f9; }
+    [data-theme="dark"] .lbl-small,
+    [data-theme="dark"] .lbl-caption { fill: #cbd5e1; }
+    [data-theme="dark"] .flow-line { stroke: #94a3b8; }
+  </style>
+
+  <!-- Title -->
+  <text x="400" y="30" class="lbl-header" text-anchor="middle">QLoRA: quantize once, LoRA on top</text>
+
+  <!-- Step 1: pretrained fp16 -->
+  <rect x="30" y="80" width="150" height="90" rx="8" fill="url(#fp16)" stroke="#475569"/>
+  <text x="105" y="115" class="lbl-white" text-anchor="middle">Pretrained</text>
+  <text x="105" y="132" class="lbl-white" text-anchor="middle">base model</text>
+  <text x="105" y="152" class="lbl-white-s" text-anchor="middle">fp16 / bf16</text>
+  <text x="105" y="167" class="lbl-white-s" text-anchor="middle">7B params &#8776; 14 GB</text>
+  <text x="105" y="192" class="lbl-caption" text-anchor="middle">Step 1</text>
+
+  <!-- Arrow 1 -->
+  <line x1="185" y1="125" x2="230" y2="125" class="flow-line" marker-end="url(#arrow-q)"/>
+  <text x="207" y="115" class="lbl-small" text-anchor="middle">quantize</text>
+
+  <!-- Step 2: NF4 base -->
+  <rect x="235" y="80" width="150" height="90" rx="8" fill="url(#nf4)" stroke="#7c3aed"/>
+  <text x="310" y="115" class="lbl-white" text-anchor="middle">NF4 quantized</text>
+  <text x="310" y="132" class="lbl-white" text-anchor="middle">base (frozen)</text>
+  <text x="310" y="152" class="lbl-white-s" text-anchor="middle">4-bit NF4 format</text>
+  <text x="310" y="167" class="lbl-white-s" text-anchor="middle">7B params &#8776; 3.5 GB</text>
+  <text x="310" y="192" class="lbl-caption" text-anchor="middle">Step 2</text>
+
+  <!-- Double quant callout -->
+  <rect x="235" y="205" width="150" height="45" rx="6" fill="#fef3c7" stroke="#f59e0b"/>
+  <text x="310" y="222" class="lbl-small" text-anchor="middle" font-weight="700" fill="#d97706">Double quantization</text>
+  <text x="310" y="238" class="lbl-small" text-anchor="middle">The quantization constants</text>
+  <text x="310" y="251" class="lbl-small" text-anchor="middle">also get quantized (saves ~0.4 bits/param)</text>
+
+  <!-- Arrow 2 -->
+  <line x1="390" y1="125" x2="435" y2="125" class="flow-line" marker-end="url(#arrow-q)"/>
+  <text x="412" y="115" class="lbl-small" text-anchor="middle">add LoRA</text>
+
+  <!-- Step 3: LoRA on top -->
+  <rect x="440" y="80" width="150" height="90" rx="8" fill="url(#lora-q)" stroke="#1d4ed8"/>
+  <text x="515" y="115" class="lbl-white" text-anchor="middle">LoRA adapter</text>
+  <text x="515" y="132" class="lbl-white" text-anchor="middle">(trainable)</text>
+  <text x="515" y="152" class="lbl-white-s" text-anchor="middle">fp16, rank r = 8</text>
+  <text x="515" y="167" class="lbl-white-s" text-anchor="middle">~10 M params &#8776; 20 MB</text>
+  <text x="515" y="192" class="lbl-caption" text-anchor="middle">Step 3</text>
+
+  <!-- Arrow 3 -->
+  <line x1="595" y1="125" x2="640" y2="125" class="flow-line" marker-end="url(#arrow-q)"/>
+  <text x="617" y="115" class="lbl-small" text-anchor="middle">deploy</text>
+
+  <!-- Result box -->
+  <rect x="645" y="80" width="130" height="90" rx="8" fill="#dcfce7" stroke="#10b981"/>
+  <text x="710" y="115" class="lbl" text-anchor="middle" font-weight="700">Deployable</text>
+  <text x="710" y="132" class="lbl" text-anchor="middle" font-weight="700">7B fine-tune</text>
+  <text x="710" y="152" class="lbl-small" text-anchor="middle" font-weight="600" fill="#059669">~6 GB total</text>
+  <text x="710" y="167" class="lbl-small" text-anchor="middle">fits on 8 GB GPU</text>
+  <text x="710" y="192" class="lbl-caption" text-anchor="middle" fill="#059669">Result</text>
+
+  <!-- Memory savings summary at bottom -->
+  <rect x="30" y="280" width="740" height="100" rx="8" fill="#f8fafc" stroke="#e2e8f0"/>
+  <text x="400" y="303" class="lbl-caption" text-anchor="middle">Memory budget for fine-tuning a 7B model</text>
+  <!-- Bars -->
+  <text x="60" y="325" class="lbl-small">Full FT (fp32)</text>
+  <rect x="200" y="317" width="500" height="10" rx="2" fill="#ef4444"/>
+  <text x="710" y="325" class="lbl-small" text-anchor="end" font-weight="600" fill="#dc2626">~140 GB</text>
+
+  <text x="60" y="345" class="lbl-small">LoRA (fp16)</text>
+  <rect x="200" y="337" width="57" height="10" rx="2" fill="#f59e0b"/>
+  <text x="270" y="345" class="lbl-small" font-weight="600" fill="#d97706">~16 GB</text>
+
+  <text x="60" y="365" class="lbl-small">QLoRA (NF4)</text>
+  <rect x="200" y="357" width="21" height="10" rx="2" fill="#10b981"/>
+  <text x="230" y="365" class="lbl-small" font-weight="600" fill="#059669">~6 GB</text>
+</svg>

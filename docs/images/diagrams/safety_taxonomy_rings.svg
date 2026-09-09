@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 480" role="img" aria-labelledby="risk-title risk-desc">
+  <title id="risk-title">Fine-tuning risk taxonomy</title>
+  <desc id="risk-desc">Concentric rings showing risk severity. The center holds the most catastrophic failure modes (prompt injection with tool access, fabricated medical/legal advice, training data leakage). The middle ring holds medium-severity risks (refusal erosion, catastrophic forgetting, bias amplification). The outer ring holds low-severity risks (overfitting, format drift, NaN losses).</desc>
+
+  <defs>
+    <radialGradient id="danger" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ef4444"/>
+      <stop offset="1" stop-color="#b91c1c"/>
+    </radialGradient>
+    <radialGradient id="warn" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#f59e0b"/>
+      <stop offset="1" stop-color="#d97706"/>
+    </radialGradient>
+    <radialGradient id="safe" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#10b981"/>
+      <stop offset="1" stop-color="#059669"/>
+    </radialGradient>
+  </defs>
+
+  <style>
+    .lbl        { font: 600 12px 'Inter', system-ui, sans-serif; fill: #0f172a; }
+    .lbl-small  { font: 500 10px 'Inter', system-ui, sans-serif; fill: #475569; }
+    .lbl-white  { font: 700 12px 'Inter', system-ui, sans-serif; fill: #ffffff; }
+    .lbl-white-s{ font: 500 10px 'Inter', system-ui, sans-serif; fill: #ffffff; }
+    .lbl-header { font: 700 16px 'Inter', system-ui, sans-serif; letter-spacing: -0.02em; fill: #0f172a; }
+    .lbl-band   { font: 700 11px 'Inter', system-ui, sans-serif; letter-spacing: .12em; text-transform: uppercase; }
+    [data-theme="dark"] .lbl,
+    [data-theme="dark"] .lbl-header { fill: #f1f5f9; }
+    [data-theme="dark"] .lbl-small { fill: #cbd5e1; }
+  </style>
+
+  <text x="350" y="28" class="lbl-header" text-anchor="middle">Risk taxonomy for fine-tuned models</text>
+  <text x="350" y="46" class="lbl-small" text-anchor="middle">Center = catastrophic. Outer = annoying. Both need attention.</text>
+
+  <!-- Outer ring (low severity) -->
+  <circle cx="350" cy="270" r="180" fill="url(#safe)" opacity="0.85"/>
+  <text x="350" y="122" class="lbl-band" text-anchor="middle" fill="#065f46">LOW SEVERITY</text>
+
+  <!-- Middle ring (medium severity) -->
+  <circle cx="350" cy="270" r="130" fill="url(#warn)" opacity="0.9"/>
+  <text x="350" y="163" class="lbl-band" text-anchor="middle" fill="#78350f">MEDIUM SEVERITY</text>
+
+  <!-- Inner ring (high severity) -->
+  <circle cx="350" cy="270" r="80" fill="url(#danger)"/>
+  <text x="350" y="222" class="lbl-band" text-anchor="middle" fill="#ffffff">HIGH SEVERITY</text>
+
+  <!-- Inner labels (high) -->
+  <text x="350" y="255" class="lbl-white" text-anchor="middle">Prompt injection</text>
+  <text x="350" y="270" class="lbl-white" text-anchor="middle">with tool access</text>
+  <text x="350" y="288" class="lbl-white-s" text-anchor="middle">Fabricated medical /</text>
+  <text x="350" y="302" class="lbl-white-s" text-anchor="middle">legal advice</text>
+  <text x="350" y="320" class="lbl-white-s" text-anchor="middle">Training data leakage</text>
+
+  <!-- Middle-ring labels (medium) - positioned in the arc between inner and outer -->
+  <text x="240" y="200" class="lbl-white-s" text-anchor="middle">Refusal erosion</text>
+  <text x="460" y="200" class="lbl-white-s" text-anchor="middle">Catastrophic forgetting</text>
+  <text x="200" y="345" class="lbl-white-s" text-anchor="middle">Bias amplification</text>
+
+  <!-- Outer-ring labels (low) - positioned in the arc between medium and edge -->
+  <text x="150" y="270" class="lbl-white-s" text-anchor="middle">Overfitting</text>
+  <text x="550" y="270" class="lbl-white-s" text-anchor="middle">Format drift</text>
+  <text x="500" y="380" class="lbl-white-s" text-anchor="middle">NaN loss</text>
+  <text x="220" y="410" class="lbl-white-s" text-anchor="middle">Slow training</text>
+
+  <!-- Callouts / side annotations -->
+  <text x="20" y="90" class="lbl-band" fill="#dc2626">RESPONSE</text>
+  <text x="20" y="108" class="lbl-small">Reject the fine-tune.</text>
+  <text x="20" y="122" class="lbl-small">Roll back immediately.</text>
+  <text x="20" y="136" class="lbl-small">Notify stakeholders.</text>
+
+  <text x="20" y="180" class="lbl-band" fill="#d97706">RESPONSE</text>
+  <text x="20" y="198" class="lbl-small">Fix before deployment.</text>
+  <text x="20" y="212" class="lbl-small">Add safety examples.</text>
+  <text x="20" y="226" class="lbl-small">Re-evaluate.</text>
+
+  <text x="20" y="270" class="lbl-band" fill="#059669">RESPONSE</text>
+  <text x="20" y="288" class="lbl-small">Adjust hyperparameters.</text>
+  <text x="20" y="302" class="lbl-small">Retrain.</text>
+  <text x="20" y="316" class="lbl-small">Ship anyway if minor.</text>
+
+  <!-- Bottom summary -->
+  <text x="350" y="465" class="lbl-small" text-anchor="middle">Every fine-tune should be evaluated against risks in all three rings before shipping.</text>
+</svg>

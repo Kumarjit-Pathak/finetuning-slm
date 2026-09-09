@@ -20,7 +20,9 @@
 
   <!-- Local -->
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/print.css" media="print">
   <script defer src="js/main.js"></script>
+  <script defer src="js/search.js"></script>
 
   <style>
     /* Risk-ring diagram */
@@ -175,6 +177,12 @@
       refuses to answer is exactly the outcome you wanted. Here is a rough ranking from &ldquo;annoying&rdquo;
       through &ldquo;career-ending&rdquo;.
     </p>
+
+    <figure class="result-figure mb-6">
+      <img src="images/diagrams/safety_taxonomy_rings.svg" alt="Concentric rings showing risk severity. Center holds high-severity risks (prompt injection with tool access, fabricated medical advice, training data leakage). Middle ring holds medium-severity risks. Outer ring holds low-severity risks." loading="lazy">
+      <figcaption>The closer to the center, the more you should treat a finding as a ship-blocker.</figcaption>
+    </figure>
+
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
 
       <div class="severity-cell high">

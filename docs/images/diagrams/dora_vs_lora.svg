@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 400" role="img" aria-labelledby="dora-title dora-desc">
+  <title id="dora-title">DoRA vs LoRA: weight decomposition</title>
+  <desc id="dora-desc">A side-by-side comparison. LoRA on the left adds a low-rank update B times A to the frozen weight W. DoRA on the right first decomposes W into magnitude vector m and direction V, then applies a LoRA-style update only to the direction while training m directly. DoRA gains the ability to modulate both magnitude and direction independently.</desc>
+
+  <defs>
+    <linearGradient id="frozen-d" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#cbd5e1"/>
+      <stop offset="1" stop-color="#94a3b8"/>
+    </linearGradient>
+    <linearGradient id="lora-d" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#60a5fa"/>
+      <stop offset="1" stop-color="#3b82f6"/>
+    </linearGradient>
+    <linearGradient id="mag-d" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#f59e0b"/>
+      <stop offset="1" stop-color="#d97706"/>
+    </linearGradient>
+    <linearGradient id="dir-d" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#a78bfa"/>
+      <stop offset="1" stop-color="#8b5cf6"/>
+    </linearGradient>
+  </defs>
+
+  <style>
+    .lbl        { font: 500 12px 'Inter', system-ui, sans-serif; fill: #0f172a; }
+    .lbl-small  { font: 500 10px 'Inter', system-ui, sans-serif; fill: #475569; }
+    .lbl-title  { font: 700 15px 'Inter', system-ui, sans-serif; fill: #0f172a; }
+    .lbl-math   { font: italic 600 13px 'JetBrains Mono', monospace; fill: #0f172a; }
+    .lbl-white  { font: 600 12px 'Inter', system-ui, sans-serif; fill: #ffffff; }
+    .lbl-header { font: 700 18px 'Inter', system-ui, sans-serif; letter-spacing: -0.02em; }
+    .lbl-train  { font: 600 10px 'Inter', system-ui, sans-serif; fill: #16a34a; }
+    .lbl-lock   { font: 600 10px 'Inter', system-ui, sans-serif; fill: #64748b; }
+    [data-theme="dark"] .lbl,
+    [data-theme="dark"] .lbl-title,
+    [data-theme="dark"] .lbl-math,
+    [data-theme="dark"] .lbl-header { fill: #f1f5f9; }
+    [data-theme="dark"] .lbl-small,
+    [data-theme="dark"] .lbl-lock { fill: #cbd5e1; }
+  </style>
+
+  <!-- Column 1: LoRA -->
+  <text x="160" y="30" class="lbl-header" text-anchor="middle" fill="#3b82f6">LoRA</text>
+  <text x="160" y="48" class="lbl-small" text-anchor="middle">Update the whole weight with a low-rank matrix</text>
+
+  <!-- Frozen W -->
+  <rect x="90" y="80" width="140" height="80" rx="6" fill="url(#frozen-d)" stroke="#64748b"/>
+  <text x="160" y="115" class="lbl-title" text-anchor="middle">W</text>
+  <text x="160" y="135" class="lbl-small" text-anchor="middle" fill="#ffffff">frozen d &#215; d</text>
+
+  <!-- Add symbol -->
+  <text x="160" y="185" class="lbl-math" text-anchor="middle">+</text>
+
+  <!-- B * A -->
+  <rect x="90" y="200" width="140" height="60" rx="6" fill="url(#lora-d)"/>
+  <text x="160" y="228" class="lbl-white" text-anchor="middle">B &#183; A</text>
+  <text x="160" y="245" class="lbl-small" text-anchor="middle" fill="#ffffff">rank r = 8</text>
+
+  <text x="160" y="290" class="lbl-train" text-anchor="middle">TRAINABLE: B and A</text>
+  <text x="160" y="308" class="lbl-lock" text-anchor="middle">FROZEN: W</text>
+
+  <!-- Math -->
+  <rect x="55" y="325" width="210" height="55" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
+  <text x="160" y="348" class="lbl-math" text-anchor="middle">W' = W + BA</text>
+  <text x="160" y="368" class="lbl-small" text-anchor="middle">One update path</text>
+
+  <!-- Divider -->
+  <line x1="360" y1="70" x2="360" y2="380" stroke="#94a3b8" stroke-width="1" stroke-dasharray="4 3"/>
+
+  <!-- Column 2: DoRA -->
+  <text x="560" y="30" class="lbl-header" text-anchor="middle" fill="#8b5cf6">DoRA</text>
+  <text x="560" y="48" class="lbl-small" text-anchor="middle">Decompose weight into magnitude + direction, then update each</text>
+
+  <!-- Decomposition equation on top -->
+  <rect x="450" y="66" width="220" height="24" rx="4" fill="#f5f3ff" stroke="#8b5cf6"/>
+  <text x="560" y="83" class="lbl-math" text-anchor="middle">W = m &#183; V / &#8214;V&#8214;</text>
+
+  <!-- Direction (frozen part) with LoRA on top -->
+  <rect x="410" y="105" width="130" height="70" rx="6" fill="url(#frozen-d)" stroke="#64748b"/>
+  <text x="475" y="132" class="lbl-title" text-anchor="middle">V direction</text>
+  <text x="475" y="152" class="lbl-small" text-anchor="middle" fill="#ffffff">frozen d &#215; d</text>
+
+  <!-- LoRA on direction -->
+  <rect x="410" y="185" width="130" height="45" rx="6" fill="url(#dir-d)"/>
+  <text x="475" y="207" class="lbl-white" text-anchor="middle">+ B &#183; A</text>
+  <text x="475" y="222" class="lbl-small" text-anchor="middle" fill="#ffffff">rank r on direction</text>
+
+  <!-- Magnitude vector (trainable directly) -->
+  <rect x="580" y="105" width="80" height="125" rx="6" fill="url(#mag-d)"/>
+  <text x="620" y="145" class="lbl-white" text-anchor="middle">m</text>
+  <text x="620" y="165" class="lbl-small" text-anchor="middle" fill="#ffffff">magnitude</text>
+  <text x="620" y="180" class="lbl-small" text-anchor="middle" fill="#ffffff">vector</text>
+  <text x="620" y="200" class="lbl-small" text-anchor="middle" fill="#ffffff">d params</text>
+
+  <text x="475" y="253" class="lbl-train" text-anchor="middle">TRAINABLE: B, A (direction)</text>
+  <text x="620" y="253" class="lbl-train" text-anchor="middle">TRAINABLE: m</text>
+  <text x="560" y="272" class="lbl-lock" text-anchor="middle">FROZEN: V direction basis</text>
+
+  <!-- Full formula -->
+  <rect x="410" y="295" width="300" height="70" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
+  <text x="560" y="320" class="lbl-math" text-anchor="middle">W' = m &#183; (W + BA) / &#8214;W + BA&#8214;</text>
+  <text x="560" y="340" class="lbl-small" text-anchor="middle">Direction gets low-rank update.</text>
+  <text x="560" y="355" class="lbl-small" text-anchor="middle">Magnitude gets its own trainable scalar per column.</text>
+
+  <!-- Bottom explanation -->
+  <text x="360" y="395" class="lbl-small" text-anchor="middle">DoRA adds ~d trainable parameters (the magnitude vector) on top of the LoRA parameter count.</text>
+</svg>

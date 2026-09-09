@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420" role="img" aria-labelledby="dpo-title dpo-desc">
+  <title id="dpo-title">DPO preference optimization loop</title>
+  <desc id="dpo-desc">A diagram showing the DPO training signal. The same prompt is scored by both the policy model (trainable) and a frozen reference model, producing log probabilities for chosen and rejected responses. The loss increases the policy&apos;s log probability ratio on chosen responses relative to rejected ones, with a KL penalty via beta.</desc>
+
+  <defs>
+    <linearGradient id="policy-g" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#8b5cf6"/>
+      <stop offset="1" stop-color="#6d28d9"/>
+    </linearGradient>
+    <linearGradient id="ref-g" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#94a3b8"/>
+      <stop offset="1" stop-color="#64748b"/>
+    </linearGradient>
+    <linearGradient id="chosen-g" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#10b981"/>
+      <stop offset="1" stop-color="#059669"/>
+    </linearGradient>
+    <linearGradient id="rejected-g" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#ef4444"/>
+      <stop offset="1" stop-color="#b91c1c"/>
+    </linearGradient>
+    <marker id="dpo-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#475569"/>
+    </marker>
+  </defs>
+
+  <style>
+    .lbl        { font: 500 12px 'Inter', system-ui, sans-serif; fill: #0f172a; }
+    .lbl-small  { font: 500 10px 'Inter', system-ui, sans-serif; fill: #475569; }
+    .lbl-white  { font: 700 13px 'Inter', system-ui, sans-serif; fill: #ffffff; }
+    .lbl-white-s{ font: 500 10px 'Inter', system-ui, sans-serif; fill: #ffffff; }
+    .lbl-header { font: 700 16px 'Inter', system-ui, sans-serif; letter-spacing: -0.02em; fill: #0f172a; }
+    .lbl-math   { font: italic 600 12px 'JetBrains Mono', monospace; fill: #0f172a; }
+    .lbl-badge  { font: 700 10px 'Inter', system-ui, sans-serif; letter-spacing: .08em; text-transform: uppercase; }
+    .flow-line  { fill: none; stroke: #475569; stroke-width: 1.5; }
+    [data-theme="dark"] .lbl,
+    [data-theme="dark"] .lbl-header,
+    [data-theme="dark"] .lbl-math { fill: #f1f5f9; }
+    [data-theme="dark"] .lbl-small { fill: #cbd5e1; }
+    [data-theme="dark"] .flow-line { stroke: #94a3b8; }
+  </style>
+
+  <text x="400" y="26" class="lbl-header" text-anchor="middle">DPO: increase log-ratio on chosen, decrease on rejected</text>
+
+  <!-- Input: prompt with pair -->
+  <rect x="30" y="80" width="150" height="120" rx="8" fill="#eff6ff" stroke="#3b82f6"/>
+  <text x="105" y="102" class="lbl" text-anchor="middle" font-weight="700">Preference pair</text>
+  <text x="105" y="122" class="lbl-small" text-anchor="middle">prompt x</text>
+
+  <rect x="45" y="130" width="120" height="26" rx="4" fill="url(#chosen-g)"/>
+  <text x="105" y="147" class="lbl-white-s" text-anchor="middle">y_w (chosen)</text>
+
+  <rect x="45" y="162" width="120" height="26" rx="4" fill="url(#rejected-g)"/>
+  <text x="105" y="179" class="lbl-white-s" text-anchor="middle">y_l (rejected)</text>
+
+  <!-- Split into two paths -->
+  <line x1="185" y1="140" x2="230" y2="130" class="flow-line" marker-end="url(#dpo-arrow)"/>
+  <line x1="185" y1="180" x2="230" y2="230" class="flow-line" marker-end="url(#dpo-arrow)"/>
+
+  <!-- Policy model -->
+  <rect x="235" y="95" width="180" height="80" rx="8" fill="url(#policy-g)" stroke="#6d28d9"/>
+  <text x="325" y="122" class="lbl-white" text-anchor="middle">Policy model &#960;_&#952;</text>
+  <text x="325" y="140" class="lbl-white-s" text-anchor="middle">trainable</text>
+  <text x="325" y="158" class="lbl-white-s" text-anchor="middle">(LoRA on SFT init)</text>
+  <text x="325" y="187" class="lbl-badge" text-anchor="middle" fill="#8b5cf6">TRAINABLE</text>
+
+  <!-- Reference model -->
+  <rect x="235" y="220" width="180" height="80" rx="8" fill="url(#ref-g)" stroke="#64748b"/>
+  <text x="325" y="247" class="lbl-white" text-anchor="middle">Reference &#960;_ref</text>
+  <text x="325" y="265" class="lbl-white-s" text-anchor="middle">frozen</text>
+  <text x="325" y="283" class="lbl-white-s" text-anchor="middle">(SFT-trained, adapter disabled)</text>
+  <text x="325" y="312" class="lbl-badge" text-anchor="middle" fill="#64748b">FROZEN</text>
+
+  <!-- Compute log-probs -->
+  <line x1="420" y1="135" x2="465" y2="135" class="flow-line" marker-end="url(#dpo-arrow)"/>
+  <line x1="420" y1="260" x2="465" y2="260" class="flow-line" marker-end="url(#dpo-arrow)"/>
+
+  <!-- Log-prob boxes -->
+  <rect x="470" y="105" width="150" height="70" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
+  <text x="545" y="128" class="lbl-math" text-anchor="middle">log &#960;_&#952;(y_w | x)</text>
+  <text x="545" y="148" class="lbl-math" text-anchor="middle">log &#960;_&#952;(y_l | x)</text>
+  <text x="545" y="167" class="lbl-small" text-anchor="middle">policy scores</text>
+
+  <rect x="470" y="230" width="150" height="70" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
+  <text x="545" y="253" class="lbl-math" text-anchor="middle">log &#960;_ref(y_w | x)</text>
+  <text x="545" y="273" class="lbl-math" text-anchor="middle">log &#960;_ref(y_l | x)</text>
+  <text x="545" y="292" class="lbl-small" text-anchor="middle">reference scores</text>
+
+  <!-- Combine to loss -->
+  <line x1="625" y1="140" x2="655" y2="180" class="flow-line" marker-end="url(#dpo-arrow)"/>
+  <line x1="625" y1="265" x2="655" y2="225" class="flow-line" marker-end="url(#dpo-arrow)"/>
+
+  <!-- Loss box -->
+  <rect x="655" y="170" width="130" height="70" rx="8" fill="#fef3c7" stroke="#f59e0b"/>
+  <text x="720" y="197" class="lbl" text-anchor="middle" font-weight="700" fill="#d97706">DPO loss</text>
+  <text x="720" y="215" class="lbl-small" text-anchor="middle">log &#963;(&#946; &#183; &#916;log_ratio)</text>
+  <text x="720" y="232" class="lbl-small" text-anchor="middle" font-weight="700" fill="#dc2626">&lt; log 2 = success</text>
+
+  <!-- Full loss equation at the bottom -->
+  <rect x="30" y="330" width="740" height="70" rx="8" fill="#f8fafc" stroke="#e2e8f0"/>
+  <text x="400" y="360" class="lbl-math" text-anchor="middle" font-size="14">L = -log &#963;(&#946; &#183; [ log(&#960;_&#952;(y_w|x) / &#960;_ref(y_w|x)) &#8722; log(&#960;_&#952;(y_l|x) / &#960;_ref(y_l|x)) ])</text>
+  <text x="400" y="385" class="lbl-small" text-anchor="middle">The policy is pushed toward chosen and away from rejected. Beta controls how far it can drift from the reference.</text>
+</svg>

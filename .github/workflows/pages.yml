@@ -1,9 +1,11 @@
-name: Deploy GitHub Pages
+name: Deploy docs to GitHub Pages
 
 on:
   push:
-    branches: ["main"]
-    paths: ["docs/**"]
+    branches: [main]
+    paths:
+      - 'docs/**'
+      - '.github/workflows/pages.yml'
   workflow_dispatch:
 
 permissions:
@@ -12,27 +14,127 @@ permissions:
   id-token: write
 
 concurrency:
-  group: "pages"
-  cancel-in-progress: false
+  group: pages
+  cancel-in-progress: true
 
 jobs:
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Sanity check — no emojis in source files
+        run: |
+          python3 - <<'PY'
+          import re, pathlib, sys
+          emoji_re = re.compile(r'[\U0001F300-\U0001FAFF\U0001F600-\U0001F64F\U0001F900-\U0001F9FF\U0001F1E6-\U0001F1FF\U00002600-\U000027BF]')
+          bad = []
+          for f in pathlib.Path('docs').rglob('*'):
+              if not f.is_file(): continue
+              if any(part in {'images', 'notebooks'} for part in f.parts): continue
+              if f.suffix not in {'.html', '.css', '.js', '.svg'}: continue
+              try:
+                  txt = f.read_text(errors='ignore')
+              except Exception:
+                  continue
+              if emoji_re.search(txt):
+                  bad.append(str(f))
+          if bad:
+              print('Emoji-containing files found:')
+              for f in bad: print(' -', f)
+              sys.exit(1)
+          print('Sanity check passed: no emojis in HTML / CSS / JS / SVG sources.')
+          PY
+
+      - name: URL audit — no absolute paths in HTML
+        run: |
+          python3 - <<'PY'
+          import re, pathlib, sys
+          bad = re.compile(r'''(?:href|src)\s*=\s*["'](/[^"'#][^"']*)["']''')
+          hits = []
+          for f in pathlib.Path('docs').rglob('*.html'):
+              for m in bad.findall(f.read_text()):
+                  hits.append((str(f), m))
+          if hits:
+              print('Absolute paths would break at the Pages sub-path:')
+              for f, m in hits[:20]: print(f'  {f}: {m}')
+              sys.exit(1)
+          print('URL audit passed: all references are relative.')
+          PY
+
+      - name: Rebuild search index
+        run: |
+          python3 - <<'PY'
+          import re, json, pathlib
+
+          def strip_tags(html):
+              html = re.sub(r'<(script|style)[^>]*>.*?</\1>', '', html, flags=re.DOTALL|re.IGNORECASE)
+              text = re.sub(r'<[^>]+>', ' ', html)
+              for e, c in (('&amp;','&'),('&lt;','<'),('&gt;','>'),('&quot;','"'),('&#39;',"'"),
+                           ('&ldquo;','"'),('&rdquo;','"'),('&mdash;','\u2014'),('&middot;','\u00b7'),
+                           ('&nbsp;',' '),('&hellip;','\u2026'),('&asymp;','\u2248'),('&times;','\u00d7')):
+                  text = text.replace(e, c)
+              return re.sub(r'\s+', ' ', text).strip()
+
+          def title_of(html):
+              m = re.search(r'<title>(.*?)</title>', html, flags=re.DOTALL)
+              return strip_tags(m.group(1)) if m else ''
+
+          def desc_of(html):
+              m = re.search(r'<meta\s+name=["\']description["\']\s+content=["\']([^"\']*)["\']', html)
+              return m.group(1) if m else ''
+
+          def headings_of(html):
+              return [strip_tags(t) for _, t in re.findall(r'<h([1-3])[^>]*>(.*?)</h\1>', html, flags=re.DOTALL|re.IGNORECASE)]
+
+          pages = [
+              ('index.html', 'Home'),
+              ('techniques.html', 'Techniques'),
+              ('comparison.html', 'Comparison'),
+              ('choosing-method.html', 'Which Method?'),
+              ('safety.html', 'Safety'),
+              ('failure-points.html', 'Failure Points'),
+              ('fun-usecases.html', 'Fun use cases'),
+              ('industry-usecases.html', 'Industry use cases'),
+              ('guide.html', 'Guide'),
+          ]
+
+          index = []
+          for fn, section in pages:
+              p = pathlib.Path('docs') / fn
+              if not p.exists(): continue
+              html = p.read_text()
+              title = title_of(html) or section
+              desc = desc_of(html)
+              heads = headings_of(html)
+              body = (desc + ' ' + ' '.join(heads[:8]))[:400]
+              index.append({'url': fn, 'title': title, 'snippet': desc[:140], 'body': body, 'tags': [section]})
+              for m in re.finditer(r'<h([1-3])[^>]*id=["\']([^"\']+)["\'][^>]*>(.*?)</h\1>', html, flags=re.DOTALL|re.IGNORECASE):
+                  htext = strip_tags(m.group(3))
+                  if len(htext) > 2:
+                      index.append({'url': f'{fn}#{m.group(2)}', 'title': htext, 'snippet': f'Section on {title}', 'body': htext, 'tags': [section]})
+
+          out = pathlib.Path('docs/js/search-index.js')
+          out.write_text('window.SLM_SEARCH_INDEX = ' + json.dumps(index, ensure_ascii=False, indent=0) + ';\n')
+          print(f'Wrote {len(index)} entries to {out}')
+          PY
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
-      - name: Upload artifact
+      - name: Upload docs/ as artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: docs/
+          path: docs
 
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4

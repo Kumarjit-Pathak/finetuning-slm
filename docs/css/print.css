@@ -1,0 +1,186 @@
+/* ============================================================
+   SLM Fine-Tuning Tutorial — Print stylesheet
+   Loaded via <link media="print"> when the user prints or
+   exports to PDF. Focused on readability, ink savings, and
+   showing all content (tabs, panels, accordions).
+   ============================================================ */
+
+@media print {
+  /* ---- Reset colors: dark backgrounds waste ink ---- */
+  html, body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    font-size: 11pt;
+    line-height: 1.5;
+  }
+
+  /* ---- Kill interactive-only elements ---- */
+  .nav-shell,
+  .site-footer,
+  .btn,
+  .tabs,
+  .side-nav,
+  .prompt-picker,
+  .filter-btn,
+  .radar-picker,
+  .filter-slider,
+  .chart-wrap,
+  #slm-search-overlay,
+  [data-search-open],
+  [data-theme-toggle],
+  [data-slm-hit],
+  input[type="range"],
+  .copy-btn {
+    display: none !important;
+  }
+
+  /* ---- Expand all collapsed content ---- */
+  .tab-panel,
+  details {
+    display: block !important;
+  }
+  details > summary {
+    list-style: none;
+    cursor: default;
+  }
+  details > *:not(summary) {
+    display: block !important;
+  }
+
+  /* ---- Layout: full-width, no fancy grids ---- */
+  .container-wide,
+  .container-reading {
+    max-width: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  .grid {
+    display: block !important;
+  }
+
+  /* ---- Cards, callouts, tables become simple boxes ---- */
+  .card,
+  .callout,
+  .compare-box,
+  .path-card,
+  .stat-card,
+  .kpi-card,
+  .task-card,
+  .failure-card,
+  .severity-cell,
+  .quiz-panel,
+  .checklist-item {
+    background: #ffffff !important;
+    border: 1px solid #94a3b8 !important;
+    box-shadow: none !important;
+    color: #0f172a !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+    padding: .5rem .75rem !important;
+    margin: .5rem 0 !important;
+  }
+
+  /* ---- Callouts get a light background so they still stand out ---- */
+  .callout {
+    background: #fef9c3 !important;
+    border-left: 3px solid #d97706 !important;
+  }
+
+  /* ---- Headings tighten up ---- */
+  h1, h2, h3, h4 {
+    color: #0f172a !important;
+    page-break-after: avoid;
+    break-after: avoid;
+  }
+  h1 { font-size: 20pt; margin: 8pt 0 4pt; }
+  h2 { font-size: 15pt; margin: 8pt 0 4pt; }
+  h3 { font-size: 12pt; margin: 6pt 0 3pt; border-left: none !important; padding-left: 0 !important; }
+
+  /* ---- Links: show the URL after each link (except internal fragment links) ---- */
+  a[href]:not([href^="#"]):not([href*="javascript"]):after {
+    content: " (" attr(href) ")";
+    font-size: 8pt;
+    color: #64748b;
+    word-break: break-all;
+  }
+
+  /* ---- Images: keep them, but limit size to avoid full-page hero ---- */
+  img, svg {
+    max-width: 100% !important;
+    height: auto !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  .result-figure {
+    border: 1px solid #cbd5e1 !important;
+    background: #ffffff !important;
+    page-break-inside: avoid;
+  }
+  .result-figure figcaption {
+    background: #f8fafc !important;
+    color: #475569 !important;
+  }
+
+  /* ---- Code blocks: keep monospace, avoid page breaks ---- */
+  pre, code {
+    background: #f8fafc !important;
+    color: #0f172a !important;
+    border: 1px solid #cbd5e1 !important;
+    page-break-inside: avoid;
+  }
+  pre {
+    padding: 6pt !important;
+    font-size: 9pt !important;
+    line-height: 1.35 !important;
+  }
+
+  /* ---- Tables: bordered, ink-friendly ---- */
+  .table-clean {
+    border-collapse: collapse !important;
+    width: 100% !important;
+    page-break-inside: avoid;
+  }
+  .table-clean th,
+  .table-clean td {
+    border: 1px solid #94a3b8 !important;
+    padding: 4pt 6pt !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+  }
+  .table-clean th {
+    background: #f1f5f9 !important;
+    font-weight: 700;
+  }
+
+  /* ---- Badges: simple text with brackets so they still make sense in print ---- */
+  .badge {
+    background: transparent !important;
+    color: #0f172a !important;
+    border: 1px solid #94a3b8 !important;
+    padding: 0 .25rem !important;
+  }
+
+  /* ---- Two-column grids collapse to a single column, no gaps ---- */
+  .pros-cons {
+    display: block !important;
+  }
+  .pros-cons > div {
+    margin-bottom: .5rem !important;
+  }
+
+  /* ---- Page breaks in strategic places ---- */
+  section {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  .callout {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* ---- Show a footer with the source URL on every printed page ---- */
+  @page {
+    margin: 12mm 14mm;
+    size: A4;
+  }
+}
