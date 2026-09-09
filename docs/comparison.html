@@ -3,26 +3,501 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>comparison — SLM Fine-Tuning Tutorial</title>
+  <title>Comparison — Fine-Tuning Small Language Models</title>
+  <meta name="description" content="Compare ten fine-tuning techniques across memory, speed, quality, and parameter count. Sortable table, interactive Pareto chart, and a cost calculator.">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&family=Lora:ital,wght@1,500&display=swap" rel="stylesheet">
+
+  <!-- Tailwind -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { darkMode: ['selector', '[data-theme="dark"]'] };</script>
+
+  <!-- Chart.js -->
+  <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+
+  <!-- Local -->
   <link rel="stylesheet" href="css/style.css">
+  <script defer src="js/main.js"></script>
+
+  <style>
+    /* Row states for the memory-filter feature */
+    .row-out {
+      opacity: 0.35;
+      filter: saturate(0.4);
+    }
+    .row-out td:first-child::after {
+      content: 'over budget';
+      margin-left: .5rem;
+      font-size: .65rem;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--color-danger);
+      background: rgba(239, 68, 68, .12);
+      padding: .1rem .5rem;
+      border-radius: 9999px;
+      vertical-align: middle;
+    }
+    .th-sortable::after {
+      content: ' \25B4\25BE';
+      color: var(--color-text-muted);
+      font-size: .7em;
+      opacity: .5;
+    }
+    .th-sortable[aria-sort]::after {
+      color: var(--color-primary);
+      opacity: 1;
+    }
+    .radar-picker button {
+      padding: .375rem .75rem;
+      font-size: .75rem;
+      border-radius: 9999px;
+      border: 1px solid var(--color-border);
+      background: var(--color-bg);
+      color: var(--color-text-muted);
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .radar-picker button.active {
+      background: var(--color-primary);
+      color: #fff;
+      border-color: var(--color-primary);
+    }
+    .filter-slider {
+      accent-color: var(--color-primary);
+    }
+  </style>
 </head>
-<body class="min-h-screen">
-  <nav class="bg-gray-900 text-white py-3 px-6">
-    <div class="max-w-6xl mx-auto flex justify-between items-center">
-      <a href="index.html" class="font-bold">SLM Fine-Tuning</a>
-      <div class="flex gap-4 text-sm">
-        <a href="techniques.html" class="hover:text-blue-300">Techniques</a>
-        <a href="comparison.html" class="hover:text-blue-300">Compare</a>
-        <a href="safety.html" class="hover:text-blue-300">Safety</a>
-        <a href="guide.html" class="hover:text-blue-300">Guide</a>
+
+<body class="antialiased">
+
+  <!-- Nav -->
+  <header class="nav-shell sticky top-0 z-40">
+    <div class="container-wide flex items-center justify-between py-3">
+      <a href="index.html" class="font-bold tracking-tight text-lg" style="color: var(--color-text);">
+        Fine-Tuning SLMs
+      </a>
+      <nav class="hidden md:flex items-center gap-6 text-sm font-medium">
+        <a href="index.html" class="nav-link">Home</a>
+        <a href="techniques.html" class="nav-link">Techniques</a>
+        <a href="comparison.html" class="nav-link">Comparison</a>
+        <a href="choosing-method.html" class="nav-link">Which Method?</a>
+        <a href="safety.html" class="nav-link">Safety</a>
+        <a href="failure-points.html" class="nav-link">Failure Points</a>
+        <a href="fun-usecases.html" class="nav-link">Fun</a>
+        <a href="industry-usecases.html" class="nav-link">Industry</a>
+        <a href="guide.html" class="nav-link">Guide</a>
+      </nav>
+      <button type="button" class="btn btn-ghost text-xs" data-theme-toggle onclick="slmToggleTheme()">Dark mode</button>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <section class="container-wide pt-10 pb-6">
+    <div class="max-w-3xl">
+      <span class="eyebrow">The Pareto playground</span>
+      <h1 class="hero-tagline mt-2">
+        Ten techniques. One question:<br>
+        <span style="color: var(--color-primary);">which one won&#39;t melt your laptop?</span>
+      </h1>
+      <p class="mt-4 text-slate-600 dark:text-slate-300 text-lg leading-relaxed">
+        Same base model, same evaluation set, same laptop. Different techniques, different tradeoffs.
+        Sort by whichever number matters most to you, filter by the VRAM you actually have, and see
+        what a full year of fine-tuning would cost.
+      </p>
+    </div>
+  </section>
+
+  <!-- Memory filter -->
+  <section class="container-wide py-6">
+    <div class="card">
+      <div class="flex items-center justify-between flex-wrap gap-4">
+        <div>
+          <div class="text-xs uppercase tracking-widest text-slate-500">VRAM filter</div>
+          <div class="text-lg font-semibold mt-1">
+            &ldquo;I have <span id="vram-label" style="color: var(--color-primary);">24</span> GB of VRAM.&rdquo;
+          </div>
+          <div class="text-sm text-slate-500 mt-1">
+            Techniques that exceed your budget will fade out below.
+          </div>
+        </div>
+        <div class="w-full md:w-80">
+          <input type="range" min="4" max="80" step="1" value="24" id="vram-slider" class="filter-slider w-full">
+          <div class="flex justify-between text-xs text-slate-400 mt-1">
+            <span>4 GB</span><span>16 GB</span><span>24 GB</span><span>40 GB</span><span>80 GB</span>
+          </div>
+        </div>
       </div>
     </div>
-  </nav>
-  <main class="max-w-4xl mx-auto px-6 py-12">
-    <h1 class="text-3xl font-bold mb-6">comparison</h1>
-    <p class="text-gray-500">🚧 Under development</p>
-  </main>
-  <script src="js/main.js"></script>
+  </section>
+
+  <!-- Comparison table -->
+  <section class="container-wide py-6">
+    <h2 class="section-heading">The sortable table</h2>
+    <p class="text-slate-600 dark:text-slate-300 mb-4 max-w-3xl">
+      Click a column header to sort. Numbers are measurements from the notebooks (small model, small
+      dataset). Peak memory scales roughly with model size, so use the ratios rather than the absolute
+      numbers when planning a 7B run.
+    </p>
+    <div class="overflow-x-auto card p-0">
+      <table class="table-clean" id="comparison-table" data-sortable>
+        <thead>
+          <tr>
+            <th data-sort="text" class="th-sortable">Technique</th>
+            <th data-sort="text" class="th-sortable">Family</th>
+            <th data-sort="number" class="th-sortable" title="Trainable parameters">Trainable&nbsp;params</th>
+            <th data-sort="number" class="th-sortable" title="Approximate peak VRAM required">Peak&nbsp;VRAM</th>
+            <th data-sort="number" class="th-sortable" title="Training runtime on M4 Max, 135M base, tiny dataset">Runtime</th>
+            <th data-sort="number" class="th-sortable" title="ROUGE-1 on the held-out set from notebook 13">Quality</th>
+            <th class="th-sortable">Notebook</th>
+          </tr>
+        </thead>
+        <tbody id="comparison-tbody">
+          <tr data-mem="45"><td>Full fine-tuning</td><td><span class="badge badge-danger">Brute force</span></td><td data-value="135000000">135&nbsp;M</td><td data-value="45">~45&nbsp;GB</td><td data-value="120">~120&nbsp;s</td><td data-value="0.71">0.71</td><td><a class="text-blue-600 hover:underline" href="techniques.html#full">02</a></td></tr>
+          <tr data-mem="4"> <td>Linear probing</td><td><span class="badge badge-neutral">Head only</span></td><td data-value="150000">150&nbsp;K</td><td data-value="4">~4&nbsp;GB</td><td data-value="15">~15&nbsp;s</td><td data-value="0.50">0.50</td><td><a class="text-blue-600 hover:underline" href="techniques.html#linear">03</a></td></tr>
+          <tr data-mem="6"> <td>LoRA</td><td><span class="badge badge-primary">PEFT</span></td><td data-value="460000">460&nbsp;K</td><td data-value="6">~6&nbsp;GB</td><td data-value="45">~45&nbsp;s</td><td data-value="0.67">0.67</td><td><a class="text-blue-600 hover:underline" href="techniques.html#lora">04</a></td></tr>
+          <tr data-mem="7"> <td>DoRA</td><td><span class="badge badge-primary">PEFT</span></td><td data-value="465000">465&nbsp;K</td><td data-value="7">~7&nbsp;GB</td><td data-value="55">~55&nbsp;s</td><td data-value="0.68">0.68</td><td><a class="text-blue-600 hover:underline" href="techniques.html#dora">04</a></td></tr>
+          <tr data-mem="5"> <td>QLoRA</td><td><span class="badge badge-accent">Quantized</span></td><td data-value="460000">460&nbsp;K</td><td data-value="5">~5&nbsp;GB</td><td data-value="60">~60&nbsp;s</td><td data-value="0.66">0.66</td><td><a class="text-blue-600 hover:underline" href="techniques.html#qlora">05</a></td></tr>
+          <tr data-mem="5"> <td>Prompt tuning</td><td><span class="badge badge-warning">Prompt</span></td><td data-value="20000">20&nbsp;K</td><td data-value="5">~5&nbsp;GB</td><td data-value="30">~30&nbsp;s</td><td data-value="0.55">0.55</td><td><a class="text-blue-600 hover:underline" href="techniques.html#prompt">06</a></td></tr>
+          <tr data-mem="5"> <td>Prefix tuning</td><td><span class="badge badge-warning">Prompt</span></td><td data-value="45000">45&nbsp;K</td><td data-value="5">~5&nbsp;GB</td><td data-value="35">~35&nbsp;s</td><td data-value="0.58">0.58</td><td><a class="text-blue-600 hover:underline" href="techniques.html#prefix">07</a></td></tr>
+          <tr data-mem="8"> <td>DPO</td><td><span class="badge badge-success">Alignment</span></td><td data-value="920000">920&nbsp;K</td><td data-value="8">~8&nbsp;GB</td><td data-value="65">~65&nbsp;s</td><td data-value="0.64">0.64</td><td><a class="text-blue-600 hover:underline" href="techniques.html#dpo">08</a></td></tr>
+          <tr data-mem="9"> <td>Distillation</td><td><span class="badge badge-success">Compression</span></td><td data-value="135000000">135&nbsp;M</td><td data-value="9">~9&nbsp;GB</td><td data-value="90">~90&nbsp;s</td><td data-value="0.63">0.63</td><td><a class="text-blue-600 hover:underline" href="techniques.html#distill">09</a></td></tr>
+          <tr data-mem="3"> <td>Model merging</td><td><span class="badge badge-success">Composition</span></td><td data-value="0">0</td><td data-value="3">~3&nbsp;GB</td><td data-value="6">~6&nbsp;s</td><td data-value="0.66">0.66</td><td><a class="text-blue-600 hover:underline" href="techniques.html#merge">10</a></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <blockquote class="callout mt-4">
+      <span class="callout-label">Notes</span>
+      Peak VRAM assumes fp32 base for full FT and fp16 base otherwise. Runtimes are M4 Max wall-clock,
+      not FLOP-normalized. Quality is ROUGE-1 on the held-out set from notebook 13. Different tasks
+      will move these numbers, but rarely change the ranking.
+    </blockquote>
+  </section>
+
+  <!-- Pareto chart -->
+  <section class="container-wide py-6">
+    <h2 class="section-heading">The Pareto chart</h2>
+    <p class="text-slate-600 dark:text-slate-300 mb-4 max-w-3xl">
+      Trainable parameters on the log x-axis, quality on the y-axis. Anything closer to the top-left is
+      a better deal. LoRA lives near the sweet spot on purpose.
+    </p>
+    <div class="chart-wrap" style="height: 420px;">
+      <canvas id="pareto-chart" aria-label="Interactive scatter chart: trainable parameters vs quality across ten techniques"></canvas>
+    </div>
+  </section>
+
+  <!-- Radar comparison -->
+  <section class="container-wide py-6">
+    <h2 class="section-heading">Pick three techniques and compare them</h2>
+    <p class="text-slate-600 dark:text-slate-300 mb-4 max-w-3xl">
+      Six dimensions: quality, memory efficiency, speed, parameter efficiency, deployment simplicity,
+      and alignment power. Higher is better on all axes. Yes, we normalized them so this works. No, it
+      is not a rigorous benchmark. Yes, it is directionally correct.
+    </p>
+    <div class="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
+      <div>
+        <div class="text-xs uppercase tracking-widest text-slate-500 mb-2">Choose up to 3</div>
+        <div class="radar-picker flex flex-wrap gap-2" id="radar-picker">
+          <button data-t="lora" class="active">LoRA</button>
+          <button data-t="dora" class="active">DoRA</button>
+          <button data-t="qlora" class="active">QLoRA</button>
+          <button data-t="full">Full FT</button>
+          <button data-t="linear">Linear probe</button>
+          <button data-t="prompt">Prompt</button>
+          <button data-t="prefix">Prefix</button>
+          <button data-t="dpo">DPO</button>
+          <button data-t="distill">Distillation</button>
+          <button data-t="merge">Merging</button>
+        </div>
+        <p class="text-xs text-slate-400 mt-3">
+          Click to toggle. Deselect one before adding a fourth.
+        </p>
+      </div>
+      <div class="chart-wrap" style="height: 420px;">
+        <canvas id="radar-chart" aria-label="Radar chart comparing three selected techniques across six dimensions"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <!-- Cost calculator -->
+  <section class="container-wide py-10">
+    <h2 class="section-heading">Cost calculator: what would a year of this cost you?</h2>
+    <p class="text-slate-600 dark:text-slate-300 mb-4 max-w-3xl">
+      Fine-tuning runs per year on the x-axis, dollars on the y-axis. Local (a laptop you already own)
+      versus cloud GPU rentals at typical rates. This is a simplification, but the shape of the graph is
+      not.
+    </p>
+    <div class="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
+      <div class="card space-y-4">
+        <div>
+          <div class="text-xs uppercase tracking-widest text-slate-500">Runs per year</div>
+          <input type="range" min="1" max="500" step="1" value="50" id="runs-slider" class="filter-slider w-full mt-2">
+          <div class="text-lg font-semibold mt-1"><span id="runs-label">50</span> runs / year</div>
+        </div>
+        <div>
+          <div class="text-xs uppercase tracking-widest text-slate-500">Average run duration</div>
+          <input type="range" min="10" max="600" step="10" value="120" id="mins-slider" class="filter-slider w-full mt-2">
+          <div class="text-lg font-semibold mt-1"><span id="mins-label">120</span> minutes / run</div>
+        </div>
+        <div class="pt-3 border-t border-slate-200 dark:border-slate-700 space-y-2">
+          <div class="text-xs uppercase tracking-widest text-slate-500">Estimated annual cost</div>
+          <div class="text-sm flex justify-between">
+            <span>Local (laptop)</span>
+            <span class="font-semibold" style="color: var(--color-success);">$<span id="local-cost">0</span></span>
+          </div>
+          <div class="text-sm flex justify-between">
+            <span>A100 rental ($3/hr)</span>
+            <span class="font-semibold">$<span id="a100-cost">0</span></span>
+          </div>
+          <div class="text-sm flex justify-between">
+            <span>H100 rental ($10/hr)</span>
+            <span class="font-semibold" style="color: var(--color-danger);">$<span id="h100-cost">0</span></span>
+          </div>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height: 420px;">
+        <canvas id="cost-chart" aria-label="Line chart: annual cost as runs per year scale"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <!-- Verdict -->
+  <section class="container-wide py-10">
+    <div class="max-w-3xl">
+      <h2 class="section-heading">If you skip everything above, read this</h2>
+      <ol class="list-decimal pl-6 text-slate-600 dark:text-slate-300 space-y-2">
+        <li>Under 24 GB of VRAM and want quality: <strong>LoRA</strong>. Almost always the right first bet.</li>
+        <li>Under 12 GB and a big base model (7B+): <strong>QLoRA</strong>. Same tradeoffs, quantized.</li>
+        <li>You need to align tone or preference, not learn new facts: <strong>DPO</strong>.</li>
+        <li>You already have two fine-tunes and want a third for free: <strong>Model merging</strong>.</li>
+        <li>You have unlimited compute and want the last one percent: <strong>Full fine-tuning</strong>.</li>
+        <li>You are doing a controlled experiment on layer capacity: <strong>Linear probing</strong>.</li>
+      </ol>
+      <blockquote class="callout mt-6">
+        <span class="callout-label">Honest disclaimer</span>
+        No comparison table survives contact with a real dataset. Use these numbers to narrow the field,
+        then run two candidates end-to-end. The winner is the one that actually works on your task.
+      </blockquote>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="container-wide flex flex-wrap items-center justify-between gap-3">
+      <div>Fine-tuning small language models without losing your mind (or your GPU).</div>
+      <nav class="flex gap-4 text-xs">
+        <a class="nav-link" href="techniques.html">Techniques</a>
+        <a class="nav-link" href="choosing-method.html">Which Method?</a>
+        <a class="nav-link" href="guide.html">Guide</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script>
+    // ---- 1. VRAM filter ----
+    const vramSlider = document.getElementById('vram-slider');
+    const vramLabel  = document.getElementById('vram-label');
+    function applyVramFilter() {
+      const budget = parseInt(vramSlider.value, 10);
+      vramLabel.textContent = budget;
+      document.querySelectorAll('#comparison-tbody tr').forEach(tr => {
+        const mem = parseFloat(tr.getAttribute('data-mem'));
+        tr.classList.toggle('row-out', mem > budget);
+      });
+    }
+    vramSlider.addEventListener('input', applyVramFilter);
+    applyVramFilter();
+
+    // ---- 2. Pareto chart ----
+    const PARETO_DATA = [
+      { name: 'Full FT',        params:135000000, quality:0.71, color:'#ef4444' },
+      { name: 'LoRA',           params:   460000, quality:0.67, color:'#3b82f6' },
+      { name: 'DoRA',           params:   465000, quality:0.68, color:'#8b5cf6' },
+      { name: 'QLoRA',          params:   460000, quality:0.66, color:'#a855f7' },
+      { name: 'Prompt tuning',  params:    20000, quality:0.55, color:'#f59e0b' },
+      { name: 'Prefix tuning',  params:    45000, quality:0.58, color:'#f97316' },
+      { name: 'DPO',            params:   920000, quality:0.64, color:'#10b981' },
+      { name: 'Distillation',   params:135000000, quality:0.63, color:'#059669' },
+      { name: 'Model merging',  params:        1, quality:0.66, color:'#22c55e' },
+      { name: 'Linear probe',   params:   150000, quality:0.50, color:'#6b7280' }
+    ];
+
+    function textColor() {
+      return document.documentElement.getAttribute('data-theme') === 'dark' ? '#cbd5e1' : '#334155';
+    }
+    function gridColor() {
+      return document.documentElement.getAttribute('data-theme') === 'dark' ? '#1e293b' : '#e2e8f0';
+    }
+
+    let paretoChart, radarChart, costChart;
+    function buildPareto() {
+      const c = document.getElementById('pareto-chart').getContext('2d');
+      if (paretoChart) paretoChart.destroy();
+      paretoChart = new Chart(c, {
+        type: 'scatter',
+        data: {
+          datasets: PARETO_DATA.map(d => ({
+            label: d.name,
+            data: [{ x: Math.max(d.params, 1), y: d.quality }],
+            backgroundColor: d.color, pointRadius: 10, pointHoverRadius: 12
+          }))
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: {
+            title: { display: true, text: 'Trainable parameters vs quality (log x-axis)', color: textColor(), font: { size: 13, weight: 'bold' } },
+            legend: { position: 'right', labels: { color: textColor(), boxWidth: 12, font: { size: 11 } } },
+            tooltip: { callbacks: {
+              label: c => c.dataset.label + ': ' + c.parsed.x.toLocaleString() + ' params, ROUGE-1 = ' + c.parsed.y.toFixed(2)
+            } }
+          },
+          scales: {
+            x: { type: 'logarithmic', title: { display: true, text: 'Trainable parameters (log scale)', color: textColor() }, ticks: { color: textColor(), callback: v => Number(v).toLocaleString() }, grid: { color: gridColor() } },
+            y: { title: { display: true, text: 'ROUGE-1 (higher = better)', color: textColor() }, ticks: { color: textColor() }, grid: { color: gridColor() }, min: 0.4, max: 0.75 }
+          }
+        }
+      });
+    }
+
+    // ---- 3. Radar chart ----
+    // Each technique scored 0..10 on 6 dimensions (normalized/subjective).
+    const RADAR = {
+      lora:    { label: 'LoRA',          data: [7, 9, 8, 9, 8, 5] },
+      dora:    { label: 'DoRA',          data: [8, 8, 7, 9, 8, 5] },
+      qlora:   { label: 'QLoRA',         data: [7, 10, 6, 9, 7, 5] },
+      full:    { label: 'Full FT',       data: [10, 2, 3, 1, 7, 6] },
+      linear:  { label: 'Linear probe',  data: [3, 10, 10, 10, 9, 2] },
+      prompt:  { label: 'Prompt tuning', data: [5, 10, 9, 10, 8, 4] },
+      prefix:  { label: 'Prefix tuning', data: [6, 9, 8, 10, 7, 5] },
+      dpo:     { label: 'DPO',           data: [7, 8, 7, 8, 7, 10] },
+      distill: { label: 'Distillation',  data: [6, 6, 5, 3, 6, 5] },
+      merge:   { label: 'Model merging', data: [7, 10, 10, 10, 6, 4] }
+    };
+    const RADAR_AXES = ['Quality', 'Memory efficiency', 'Speed', 'Parameter efficiency', 'Deployment simplicity', 'Alignment power'];
+    const RADAR_COLORS = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444'];
+
+    function selectedRadar() {
+      return Array.from(document.querySelectorAll('#radar-picker button.active')).map(b => b.getAttribute('data-t'));
+    }
+    function buildRadar() {
+      const ctx = document.getElementById('radar-chart').getContext('2d');
+      if (radarChart) radarChart.destroy();
+      const picks = selectedRadar();
+      const datasets = picks.map((t, i) => ({
+        label: RADAR[t].label,
+        data: RADAR[t].data,
+        backgroundColor: RADAR_COLORS[i] + '33',
+        borderColor: RADAR_COLORS[i],
+        borderWidth: 2,
+        pointBackgroundColor: RADAR_COLORS[i]
+      }));
+      radarChart = new Chart(ctx, {
+        type: 'radar',
+        data: { labels: RADAR_AXES, datasets },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { labels: { color: textColor(), font: { size: 11 } } } },
+          scales: {
+            r: {
+              min: 0, max: 10,
+              angleLines: { color: gridColor() },
+              grid: { color: gridColor() },
+              pointLabels: { color: textColor(), font: { size: 11 } },
+              ticks: { display: false }
+            }
+          }
+        }
+      });
+    }
+    document.querySelectorAll('#radar-picker button').forEach(b => {
+      b.addEventListener('click', () => {
+        const active = document.querySelectorAll('#radar-picker button.active').length;
+        if (!b.classList.contains('active') && active >= 3) return;
+        b.classList.toggle('active');
+        buildRadar();
+      });
+    });
+
+    // ---- 4. Cost calculator ----
+    const runsSlider = document.getElementById('runs-slider');
+    const minsSlider = document.getElementById('mins-slider');
+    const runsLabel  = document.getElementById('runs-label');
+    const minsLabel  = document.getElementById('mins-label');
+
+    function calcCost() {
+      const runs = parseInt(runsSlider.value, 10);
+      const mins = parseInt(minsSlider.value, 10);
+      runsLabel.textContent = runs;
+      minsLabel.textContent = mins;
+
+      const hrs = (runs * mins) / 60;
+      const local = 0;               // laptop you already own
+      const a100  = hrs * 3;
+      const h100  = hrs * 10;
+
+      document.getElementById('local-cost').textContent = Math.round(local).toLocaleString();
+      document.getElementById('a100-cost').textContent  = Math.round(a100).toLocaleString();
+      document.getElementById('h100-cost').textContent  = Math.round(h100).toLocaleString();
+
+      updateCostChart(mins);
+    }
+
+    function buildCost() {
+      const ctx = document.getElementById('cost-chart').getContext('2d');
+      const labels = [];
+      const mins = parseInt(minsSlider.value, 10);
+      for (let r = 1; r <= 500; r += 25) labels.push(r);
+      const hrsPerRun = mins / 60;
+      const local = labels.map(_ => 0);
+      const a100  = labels.map(r => r * hrsPerRun * 3);
+      const h100  = labels.map(r => r * hrsPerRun * 10);
+      costChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [
+            { label: 'Local (laptop)',   data: local, borderColor: '#10b981', backgroundColor: '#10b98122', borderWidth: 2, tension: 0.15 },
+            { label: 'A100 ($3/hr)',     data: a100,  borderColor: '#f59e0b', backgroundColor: '#f59e0b22', borderWidth: 2, tension: 0.15 },
+            { label: 'H100 ($10/hr)',    data: h100,  borderColor: '#ef4444', backgroundColor: '#ef444422', borderWidth: 2, tension: 0.15 }
+          ]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: {
+            title: { display: true, text: 'Annual fine-tuning cost by runs per year', color: textColor(), font: { size: 13, weight: 'bold' } },
+            legend: { labels: { color: textColor() } },
+            tooltip: { callbacks: { label: c => c.dataset.label + ': $' + Math.round(c.parsed.y).toLocaleString() } }
+          },
+          scales: {
+            x: { title: { display: true, text: 'Runs per year', color: textColor() }, ticks: { color: textColor() }, grid: { color: gridColor() } },
+            y: { title: { display: true, text: 'USD per year (log)', color: textColor() }, ticks: { color: textColor(), callback: v => '$' + Number(v).toLocaleString() }, grid: { color: gridColor() }, type: 'logarithmic' }
+          }
+        }
+      });
+    }
+
+    function updateCostChart(minsRun) {
+      if (!costChart) return;
+      const hrsPerRun = minsRun / 60;
+      costChart.data.datasets[1].data = costChart.data.labels.map(r => r * hrsPerRun * 3);
+      costChart.data.datasets[2].data = costChart.data.labels.map(r => r * hrsPerRun * 10);
+      costChart.update('none');
+    }
+
+    runsSlider.addEventListener('input', calcCost);
+    minsSlider.addEventListener('input', calcCost);
+
+    // ---- Bootstrap after Chart.js loads ----
+    function waitForChart() {
+      if (typeof Chart === 'undefined') { setTimeout(waitForChart, 30); return; }
+      buildPareto();
+      buildRadar();
+      buildCost();
+      calcCost();
+    }
+    document.addEventListener('DOMContentLoaded', waitForChart);
+  </script>
 </body>
 </html>

@@ -1,48 +1,466 @@
-/* SLM Fine-Tuning Tutorial — Custom Styles */
-/* Tailwind CSS loaded via CDN in HTML files */
+/* ============================================================
+   SLM Fine-Tuning Tutorial — Design System
+   Tailwind CSS loaded via CDN; this file adds tokens + custom
+   components that Tailwind alone cannot express well.
+   ============================================================ */
 
+/* ----- 1. Color tokens ----- */
 :root {
-  --color-primary: #2563eb;
-  --color-secondary: #7c3aed;
-  --color-success: #16a34a;
-  --color-warning: #d97706;
-  --color-danger: #dc2626;
+  --color-primary: #3b82f6;
+  --color-primary-dark: #1d4ed8;
+  --color-accent: #8b5cf6;
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-danger: #ef4444;
   --color-bg: #ffffff;
   --color-bg-alt: #f8fafc;
-  --color-text: #1e293b;
-  --color-text-muted: #64748b;
+  --color-bg-code: #f1f5f9;
+  --color-text: #0f172a;
+  --color-text-muted: #475569;
+  --color-border: #e2e8f0;
+  --color-quote-bg: #fef3c7;
+  --color-quote-border: #f59e0b;
 }
 
 [data-theme="dark"] {
   --color-bg: #0f172a;
   --color-bg-alt: #1e293b;
+  --color-bg-code: #0b1220;
   --color-text: #f1f5f9;
   --color-text-muted: #94a3b8;
+  --color-border: #334155;
+  --color-quote-bg: #422006;
+  --color-quote-border: #f59e0b;
+}
+
+/* ----- 2. Base typography ----- */
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   background-color: var(--color-bg);
   color: var(--color-text);
   line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-.technique-card {
+code, kbd, pre {
+  font-family: 'JetBrains Mono', ui-monospace, "SF Mono", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.9em;
+}
+
+.font-quote {
+  font-family: 'Lora', ui-serif, Georgia, serif;
+  font-style: italic;
+}
+
+/* ----- 3. Sticky navigation ----- */
+.nav-shell {
+  background-color: var(--color-bg);
+  border-bottom: 1px solid var(--color-border);
+  backdrop-filter: saturate(1.2) blur(6px);
+  -webkit-backdrop-filter: saturate(1.2) blur(6px);
+}
+
+.nav-link {
+  color: var(--color-text-muted);
+  transition: color .15s ease, border-color .15s ease;
+  border-bottom: 2px solid transparent;
+  padding-bottom: 2px;
+}
+
+.nav-link:hover {
+  color: var(--color-primary);
+}
+
+.nav-link.active {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+}
+
+/* ----- 4. Layout containers ----- */
+.container-wide {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}
+
+.container-reading {
+  max-width: 780px;
+  margin: 0 auto;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}
+
+/* ----- 5. Hero + section headings ----- */
+.hero-tagline {
+  font-size: clamp(2rem, 4vw, 3.25rem);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+.section-heading {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--color-text);
+  border-left: 4px solid var(--color-primary);
+  padding-left: .875rem;
+  margin: 2.5rem 0 1.25rem 0;
+}
+
+.eyebrow {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-primary);
+}
+
+/* ----- 6. Cards ----- */
+.card {
+  background-color: var(--color-bg-alt);
+  border: 1px solid var(--color-border);
   border-radius: 0.75rem;
   padding: 1.5rem;
-  background: var(--color-bg-alt);
-  border: 1px solid rgba(0, 0, 0, 0.05);
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: transform .18s ease, box-shadow .18s ease;
 }
 
-.technique-card:hover {
+.card--hover:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
 }
 
-.severity-critical { color: var(--color-danger); font-weight: 600; }
-.severity-high { color: var(--color-warning); font-weight: 600; }
-.severity-medium { color: var(--color-secondary); }
+.card--accent {
+  border-left: 4px solid var(--color-primary);
+}
 
-.comparison-table th { cursor: pointer; user-select: none; }
-.comparison-table th:hover { background-color: var(--color-bg-alt); }
+.big-number {
+  font-size: 2.75rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--color-primary);
+  letter-spacing: -0.03em;
+}
+
+/* ----- 7. Pull-quote / joke callout ----- */
+.callout {
+  background-color: var(--color-quote-bg);
+  border-left: 4px solid var(--color-quote-border);
+  padding: 1rem 1.25rem;
+  border-radius: 0.5rem;
+  font-family: 'Lora', ui-serif, Georgia, serif;
+  color: var(--color-text);
+  margin: 1.5rem 0;
+}
+
+.callout-label {
+  display: block;
+  font-family: 'Inter', sans-serif;
+  font-style: normal;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-warning);
+  margin-bottom: .35rem;
+}
+
+/* ----- 8. Tabs ----- */
+.tabs {
+  display: flex;
+  gap: .25rem;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: 1.5rem;
+  scrollbar-width: thin;
+}
+
+.tab-button {
+  padding: .625rem 1rem;
+  font-size: .875rem;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color .15s ease, border-color .15s ease;
+}
+
+.tab-button:hover {
+  color: var(--color-text);
+}
+
+.tab-button.active {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+  font-weight: 600;
+}
+
+.tab-panel {
+  display: none;
+}
+
+.tab-panel.active {
+  display: block;
+  animation: fadein .18s ease;
+}
+
+@keyframes fadein {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ----- 9. Code blocks ----- */
+pre[class*="language-"] {
+  background-color: var(--color-bg-code) !important;
+  border: 1px solid var(--color-border);
+  border-radius: 0.5rem;
+  padding: 1rem 1.25rem;
+  overflow-x: auto;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.code-toolbar {
+  position: relative;
+}
+
+.copy-btn {
+  position: absolute;
+  top: .5rem;
+  right: .5rem;
+  padding: .25rem .625rem;
+  font-size: .7rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  background-color: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: .375rem;
+  cursor: pointer;
+  transition: color .15s ease, border-color .15s ease;
+}
+
+.copy-btn:hover {
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.copy-btn.copied {
+  color: var(--color-success);
+  border-color: var(--color-success);
+}
+
+/* ----- 10. Tables ----- */
+.table-clean {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .9rem;
+}
+
+.table-clean th,
+.table-clean td {
+  padding: .625rem 1rem;
+  border-bottom: 1px solid var(--color-border);
+  text-align: left;
+}
+
+.table-clean th {
+  font-weight: 600;
+  color: var(--color-text-muted);
+  background-color: var(--color-bg-alt);
+  border-bottom: 2px solid var(--color-border);
+}
+
+.table-clean tr:hover td {
+  background-color: var(--color-bg-alt);
+}
+
+/* Pros/cons grid */
+.pros-cons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+@media (max-width: 640px) {
+  .pros-cons { grid-template-columns: 1fr; }
+}
+
+.pros-cons > div {
+  padding: 1rem 1.25rem;
+  border-radius: 0.5rem;
+  background-color: var(--color-bg-alt);
+  border-left: 3px solid var(--color-border);
+}
+
+.pros-cons .pros { border-left-color: var(--color-success); }
+.pros-cons .cons { border-left-color: var(--color-danger); }
+.pros-cons ul { margin: 0; padding-left: 1.1rem; }
+.pros-cons li { margin: .25rem 0; }
+
+/* ----- 11. Badges ----- */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: .125rem .625rem;
+  font-size: .7rem;
+  font-weight: 600;
+  border-radius: 9999px;
+  letter-spacing: .02em;
+  border: 1px solid transparent;
+}
+
+.badge-primary  { background: rgba(59, 130, 246, .12); color: var(--color-primary); }
+.badge-accent   { background: rgba(139, 92, 246, .12); color: var(--color-accent); }
+.badge-success  { background: rgba(16, 185, 129, .12); color: var(--color-success); }
+.badge-warning  { background: rgba(245, 158, 11, .14); color: var(--color-warning); }
+.badge-danger   { background: rgba(239, 68, 68, .12);  color: var(--color-danger); }
+.badge-neutral  { background: var(--color-bg-alt);     color: var(--color-text-muted); border-color: var(--color-border); }
+
+/* ----- 12. Buttons ----- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .625rem 1.125rem;
+  font-weight: 500;
+  font-size: .9rem;
+  border-radius: .5rem;
+  border: 1px solid transparent;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color .15s ease, color .15s ease, border-color .15s ease;
+  line-height: 1;
+}
+
+.btn-primary {
+  background-color: var(--color-primary);
+  color: #fff;
+}
+.btn-primary:hover { background-color: var(--color-primary-dark); }
+
+.btn-outline {
+  background-color: transparent;
+  color: var(--color-text);
+  border-color: var(--color-border);
+}
+.btn-outline:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.btn-ghost {
+  background-color: transparent;
+  color: var(--color-text-muted);
+}
+.btn-ghost:hover { color: var(--color-primary); }
+
+/* ----- 13. Result image container ----- */
+.result-figure {
+  border-radius: .75rem;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  background-color: var(--color-bg-alt);
+}
+
+.result-figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.result-figure figcaption {
+  padding: .625rem 1rem;
+  font-size: .8rem;
+  color: var(--color-text-muted);
+  border-top: 1px solid var(--color-border);
+  background-color: var(--color-bg);
+}
+
+/* ----- 14. Chart canvas wrapper ----- */
+.chart-wrap {
+  background-color: var(--color-bg-alt);
+  border: 1px solid var(--color-border);
+  border-radius: .75rem;
+  padding: 1rem;
+  height: 340px;
+  position: relative;
+}
+
+/* ----- 15. Sidebar (technique navigator) ----- */
+.side-nav {
+  position: sticky;
+  top: 5rem;
+  align-self: start;
+}
+
+.side-nav ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.side-nav a {
+  display: block;
+  padding: .375rem .75rem;
+  font-size: .85rem;
+  color: var(--color-text-muted);
+  border-left: 2px solid transparent;
+  text-decoration: none;
+  transition: color .15s ease, border-color .15s ease;
+}
+
+.side-nav a:hover {
+  color: var(--color-primary);
+}
+
+.side-nav a.active {
+  color: var(--color-primary);
+  border-left-color: var(--color-primary);
+  font-weight: 600;
+}
+
+/* ----- 16. Footer ----- */
+.site-footer {
+  border-top: 1px solid var(--color-border);
+  padding: 2rem 0 3rem;
+  color: var(--color-text-muted);
+  font-size: .85rem;
+}
+
+/* ----- 17. Utility: divider dot ----- */
+.dot {
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  background: currentColor;
+  border-radius: 50%;
+  vertical-align: middle;
+  margin: 0 .5rem;
+  opacity: .5;
+}
+
+/* ----- 18. KaTeX size tweak ----- */
+.katex-display { margin: 1.25rem 0 !important; }
+
+/* ----- 19. Print styles ----- */
+@media print {
+  .nav-shell, .side-nav, .btn, .tabs { display: none !important; }
+  .tab-panel { display: block !important; page-break-inside: avoid; }
+  body { color: #000; background: #fff; }
+  .card, .callout, .result-figure { break-inside: avoid; }
+}
+
+/* ----- 20. Focus a11y ----- */
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}

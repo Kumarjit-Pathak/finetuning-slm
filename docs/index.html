@@ -3,28 +3,505 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SLM Fine-Tuning Tutorial</title>
+  <title>Fine-Tuning Small Language Models — Without Losing Your Mind (or Your GPU)</title>
+  <meta name="description" content="A hands-on tutorial for fine-tuning small language models on your laptop. Ten techniques, twenty notebooks, five real use cases, zero datacenters required.">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&family=Lora:ital,wght@1,500&display=swap" rel="stylesheet">
+
+  <!-- Tailwind -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { darkMode: ['selector', '[data-theme="dark"]'] };</script>
+
+  <!-- Chart.js for the mini benchmark -->
+  <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+
+  <!-- Local -->
   <link rel="stylesheet" href="css/style.css">
+  <script defer src="js/main.js"></script>
+
+  <style>
+    /* Landing-page-only flourishes */
+    .grid-bg {
+      background-image:
+        linear-gradient(rgba(59,130,246,0.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(59,130,246,0.06) 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
+    [data-theme="dark"] .grid-bg {
+      background-image:
+        linear-gradient(rgba(59,130,246,0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(59,130,246,0.08) 1px, transparent 1px);
+    }
+    .path-card {
+      border-radius: 1rem;
+      padding: 1.75rem;
+      background: var(--color-bg-alt);
+      border: 1px solid var(--color-border);
+      transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+    .path-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 16px 40px rgba(15,23,42,.08);
+      border-color: var(--color-primary);
+    }
+    .path-card__level {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--color-primary);
+    }
+    .stat-card {
+      padding: 1.5rem 1.25rem;
+      text-align: center;
+      background: var(--color-bg-alt);
+      border: 1px solid var(--color-border);
+      border-radius: 0.75rem;
+    }
+    .rotating-joke {
+      min-height: 4.5rem;
+      transition: opacity .4s ease;
+    }
+    .divider-strong {
+      height: 4px;
+      background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+      border-radius: 4px;
+      max-width: 60px;
+    }
+  </style>
 </head>
-<body class="min-h-screen">
-  <header class="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-16">
-    <div class="max-w-4xl mx-auto px-6 text-center">
-      <h1 class="text-4xl font-bold mb-4">SLM Fine-Tuning Tutorial</h1>
-      <p class="text-xl opacity-90">From basics to advanced — 10+ techniques, 20 notebooks, academia-ready</p>
-      <div class="mt-8 flex justify-center gap-4 flex-wrap">
-        <a href="techniques.html" class="bg-white text-blue-600 px-6 py-2 rounded-lg font-medium hover:bg-blue-50">Techniques</a>
-        <a href="comparison.html" class="bg-white/20 text-white px-6 py-2 rounded-lg font-medium hover:bg-white/30 border border-white/30">Compare</a>
-        <a href="choosing-method.html" class="bg-white/20 text-white px-6 py-2 rounded-lg font-medium hover:bg-white/30 border border-white/30">Which Method?</a>
-        <a href="guide.html" class="bg-white/20 text-white px-6 py-2 rounded-lg font-medium hover:bg-white/30 border border-white/30">Learning Path</a>
-      </div>
+
+<body class="antialiased">
+
+  <!-- Nav -->
+  <header class="nav-shell sticky top-0 z-40">
+    <div class="container-wide flex items-center justify-between py-3">
+      <a href="index.html" class="font-bold tracking-tight text-lg" style="color: var(--color-text);">
+        Fine-Tuning SLMs
+      </a>
+      <nav class="hidden md:flex items-center gap-6 text-sm font-medium">
+        <a href="index.html" class="nav-link">Home</a>
+        <a href="techniques.html" class="nav-link">Techniques</a>
+        <a href="comparison.html" class="nav-link">Comparison</a>
+        <a href="choosing-method.html" class="nav-link">Which Method?</a>
+        <a href="safety.html" class="nav-link">Safety</a>
+        <a href="failure-points.html" class="nav-link">Failure Points</a>
+        <a href="fun-usecases.html" class="nav-link">Fun</a>
+        <a href="industry-usecases.html" class="nav-link">Industry</a>
+        <a href="guide.html" class="nav-link">Guide</a>
+      </nav>
+      <button type="button" class="btn btn-ghost text-xs" data-theme-toggle onclick="slmToggleTheme()">Dark mode</button>
     </div>
   </header>
 
-  <main class="max-w-4xl mx-auto px-6 py-12">
-    <p class="text-center text-gray-500">🚧 Content under development — check back soon!</p>
-  </main>
+  <!-- Hero -->
+  <section class="grid-bg">
+    <div class="container-wide py-16 md:py-24">
+      <div class="max-w-4xl">
+        <span class="eyebrow">A hands-on tutorial</span>
+        <h1 class="hero-tagline mt-2">
+          Fine-tuning small language models<br>
+          <span style="color: var(--color-primary);">without losing your mind</span>
+          <span class="text-slate-500 dark:text-slate-400 font-medium text-2xl md:text-3xl">(or your GPU)</span>
+        </h1>
 
-  <script src="js/main.js"></script>
+        <p class="mt-6 text-lg text-slate-600 dark:text-slate-300 max-w-3xl leading-relaxed">
+          Ten techniques. Twenty runnable notebooks. Five real use cases (three of which are, technically,
+          also fun). All of it works on a laptop. None of it requires a datacenter, a paid API, or a
+          NeurIPS submission.
+        </p>
+
+        <div class="mt-8 flex flex-wrap gap-3">
+          <a href="guide.html" class="btn btn-primary">Start the guide</a>
+          <a href="techniques.html" class="btn btn-outline">Browse techniques</a>
+          <button type="button" class="btn btn-ghost" onclick="pickRandomTechnique()">Pick a technique for me</button>
+        </div>
+
+        <p class="mt-4 text-xs text-slate-500">
+          No login, no email, no free trial that becomes a paid one. Just HTML and Jupyter.
+        </p>
+      </div>
+
+      <!-- Big numbers -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-14">
+        <div class="stat-card">
+          <div class="big-number">20</div>
+          <div class="text-xs uppercase tracking-widest text-slate-500 mt-1">runnable notebooks</div>
+        </div>
+        <div class="stat-card">
+          <div class="big-number">10</div>
+          <div class="text-xs uppercase tracking-widest text-slate-500 mt-1">techniques covered</div>
+        </div>
+        <div class="stat-card">
+          <div class="big-number">5</div>
+          <div class="text-xs uppercase tracking-widest text-slate-500 mt-1">real use cases</div>
+        </div>
+        <div class="stat-card">
+          <div class="big-number">0</div>
+          <div class="text-xs uppercase tracking-widest text-slate-500 mt-1">datacenters required</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- What's inside -->
+  <section class="container-wide py-16">
+    <div class="max-w-3xl">
+      <span class="eyebrow">What&#39;s inside</span>
+      <h2 class="text-3xl font-bold mt-2 tracking-tight">Ten techniques, honestly reported.</h2>
+      <div class="divider-strong mt-3 mb-6"></div>
+      <p class="text-slate-600 dark:text-slate-300">
+        Every technique in this tutorial was run end-to-end on a laptop. Some worked beautifully. Some hit
+        capacity walls that a 135M model just cannot climb. All results are reported as they actually
+        happened, including the ones that made us look up how to phrase &ldquo;the model produced garbage&rdquo; in
+        the passive voice.
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mt-10">
+
+      <a class="card card--hover" href="techniques.html#lora">
+        <div class="text-xs font-bold uppercase tracking-widest text-blue-500">Parameter-efficient</div>
+        <div class="font-semibold text-lg mt-1">LoRA</div>
+        <p class="text-sm text-slate-500 mt-1">
+          Freeze the base, train two tiny matrices. 460K parameters instead of 135M. Almost the same quality.
+        </p>
+        <div class="mt-3 text-xs text-slate-400">Notebook 04</div>
+      </a>
+
+      <a class="card card--hover" href="techniques.html#dora">
+        <div class="text-xs font-bold uppercase tracking-widest text-blue-500">Parameter-efficient</div>
+        <div class="font-semibold text-lg mt-1">DoRA</div>
+        <p class="text-sm text-slate-500 mt-1">
+          LoRA plus a magnitude vector. Sometimes better, always slightly heavier. A worthwhile experiment.
+        </p>
+        <div class="mt-3 text-xs text-slate-400">Notebook 04</div>
+      </a>
+
+      <a class="card card--hover" href="techniques.html#qlora">
+        <div class="text-xs font-bold uppercase tracking-widest text-purple-500">Quantized</div>
+        <div class="font-semibold text-lg mt-1">QLoRA</div>
+        <p class="text-sm text-slate-500 mt-1">
+          Squeeze the base into 4 bits. Fine-tune on top. A 7B model now fits in 6 GB of VRAM.
+        </p>
+        <div class="mt-3 text-xs text-slate-400">Notebook 05</div>
+      </a>
+
+      <a class="card card--hover" href="techniques.html#prompt">
+        <div class="text-xs font-bold uppercase tracking-widest text-amber-500">Prompt-based</div>
+        <div class="font-semibold text-lg mt-1">Prompt tuning</div>
+        <p class="text-sm text-slate-500 mt-1">
+          Learn a handful of virtual tokens that live in embedding space. Tiny footprint, narrow benefits.
+        </p>
+        <div class="mt-3 text-xs text-slate-400">Notebook 06</div>
+      </a>
+
+      <a class="card card--hover" href="techniques.html#prefix">
+        <div class="text-xs font-bold uppercase tracking-widest text-amber-500">Prompt-based</div>
+        <div class="font-semibold text-lg mt-1">Prefix tuning</div>
+        <p class="text-sm text-slate-500 mt-1">
+          Prompt tuning, but the tokens are injected at every layer. More expressive, still very small.
+        </p>
+        <div class="mt-3 text-xs text-slate-400">Notebook 07</div>
+      </a>
+
+      <a class="card card--hover" href="techniques.html#dpo">
+        <div class="text-xs font-bold uppercase tracking-widest text-green-500">Alignment</div>
+        <div class="font-semibold text-lg mt-1">DPO</div>
+        <p class="text-sm text-slate-500 mt-1">
+          Teach the model what a better answer looks like without a reward model. Preference pairs, that&#39;s it.
+        </p>
+        <div class="mt-3 text-xs text-slate-400">Notebook 08</div>
+      </a>
+
+      <a class="card card--hover" href="techniques.html#distill">
+        <div class="text-xs font-bold uppercase tracking-widest text-green-500">Compression</div>
+        <div class="font-semibold text-lg mt-1">Distillation</div>
+        <p class="text-sm text-slate-500 mt-1">
+          A big model tutors a small model. The small model learns to imitate, faster and cheaper.
+        </p>
+        <div class="mt-3 text-xs text-slate-400">Notebook 09</div>
+      </a>
+
+      <a class="card card--hover" href="techniques.html#merge">
+        <div class="text-xs font-bold uppercase tracking-widest text-green-500">Composition</div>
+        <div class="font-semibold text-lg mt-1">Model merging</div>
+        <p class="text-sm text-slate-500 mt-1">
+          Combine multiple fine-tuned models by averaging weights. Zero extra training. SLERP, TIES, DARE.
+        </p>
+        <div class="mt-3 text-xs text-slate-400">Notebook 10</div>
+      </a>
+
+      <a class="card card--hover" href="techniques.html#full">
+        <div class="text-xs font-bold uppercase tracking-widest text-red-500">Brute force</div>
+        <div class="font-semibold text-lg mt-1">Full fine-tuning</div>
+        <p class="text-sm text-slate-500 mt-1">
+          Train every parameter. The baseline everyone compares to. Also the one that eats the most VRAM.
+        </p>
+        <div class="mt-3 text-xs text-slate-400">Notebook 02</div>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- Learning paths -->
+  <section class="py-16" style="background: var(--color-bg-alt);">
+    <div class="container-wide">
+      <div class="max-w-3xl">
+        <span class="eyebrow">Learning paths</span>
+        <h2 class="text-3xl font-bold mt-2 tracking-tight">Three ways to get through this.</h2>
+        <div class="divider-strong mt-3 mb-6"></div>
+        <p class="text-slate-600 dark:text-slate-300">
+          Pick a difficulty like you would in a JRPG, except the final boss is a NaN loss curve. Each track
+          has a runtime estimate that assumes you actually run the notebooks. Skimming is faster.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mt-10">
+
+        <a href="guide.html#beginner" class="path-card">
+          <div class="path-card__level">Beginner</div>
+          <div class="font-bold text-2xl mt-1">First fine-tune</div>
+          <div class="text-sm text-slate-500 mt-1">5 notebooks &middot; approx. 4 hours</div>
+          <p class="text-slate-600 dark:text-slate-300 mt-4 text-sm leading-relaxed">
+            The essentials: environment, dataset design, full fine-tuning, feature extraction, and your
+            first LoRA. Enough to have an opinion at dinner.
+          </p>
+          <div class="mt-6 pt-4 border-t border-slate-200 dark:border-slate-700 text-xs text-slate-500 flex items-center justify-between">
+            <span>Prerequisites: Python, a laptop</span>
+            <span class="badge badge-primary">Start here</span>
+          </div>
+        </a>
+
+        <a href="guide.html#intermediate" class="path-card" style="border-color: var(--color-primary); box-shadow: 0 12px 30px rgba(59,130,246,0.12);">
+          <div class="path-card__level">Intermediate</div>
+          <div class="font-bold text-2xl mt-1">The PEFT tour</div>
+          <div class="text-sm text-slate-500 mt-1">10 notebooks &middot; approx. 10 hours</div>
+          <p class="text-slate-600 dark:text-slate-300 mt-4 text-sm leading-relaxed">
+            LoRA, DoRA, QLoRA, prompt/prefix tuning, DPO, distillation, merging. The whole
+            parameter-efficient lineup. This is where most of the field lives now.
+          </p>
+          <div class="mt-6 pt-4 border-t border-slate-200 dark:border-slate-700 text-xs text-slate-500 flex items-center justify-between">
+            <span>Prerequisites: Beginner track</span>
+            <span class="badge badge-accent">Most popular</span>
+          </div>
+        </a>
+
+        <a href="guide.html#advanced" class="path-card">
+          <div class="path-card__level">Advanced</div>
+          <div class="font-bold text-2xl mt-1">Everything, honestly</div>
+          <div class="text-sm text-slate-500 mt-1">20 notebooks &middot; approx. 20 hours</div>
+          <p class="text-slate-600 dark:text-slate-300 mt-4 text-sm leading-relaxed">
+            All ten techniques, plus safety, failure analysis, evaluation theory, industry use cases,
+            and the Apple Silicon deep dive. When you finish, you can teach the course.
+          </p>
+          <div class="mt-6 pt-4 border-t border-slate-200 dark:border-slate-700 text-xs text-slate-500 flex items-center justify-between">
+            <span>Prerequisites: Time</span>
+            <span class="badge badge-neutral">Completionist</span>
+          </div>
+        </a>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- Featured result -->
+  <section class="container-wide py-16">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
+      <div>
+        <span class="eyebrow">Featured result</span>
+        <h2 class="text-3xl font-bold mt-2 tracking-tight">We ran all ten. Here is the leaderboard.</h2>
+        <div class="divider-strong mt-3 mb-6"></div>
+        <p class="text-slate-600 dark:text-slate-300">
+          Same base model. Same evaluation set. Different techniques. Full fine-tuning wins on quality by
+          a small margin. LoRA and DoRA get very close for about 300 times less compute. Merging comes
+          out of nowhere with the fastest runtime because it does not train at all.
+        </p>
+        <ul class="mt-4 text-sm text-slate-600 dark:text-slate-300 space-y-2">
+          <li><strong>Gold:</strong> Full fine-tuning &mdash; the reigning champion, also the reigning glutton.</li>
+          <li><strong>Silver:</strong> DoRA &mdash; LoRA&#39;s slightly heavier cousin.</li>
+          <li><strong>Bronze:</strong> LoRA &mdash; the best value in the sport.</li>
+          <li><strong>Speed award:</strong> Model merging &mdash; six seconds. No training at all.</li>
+        </ul>
+        <div class="mt-6 flex flex-wrap gap-3">
+          <a href="comparison.html" class="btn btn-primary">Open the full comparison</a>
+          <a href="choosing-method.html" class="btn btn-outline">Which one for my task?</a>
+        </div>
+      </div>
+      <figure class="result-figure">
+        <img src="images/notebooks/benchmark_comparison.png" alt="Benchmark comparison chart from notebook 13: quality, memory, and training time across the ten techniques." loading="lazy">
+        <figcaption>Notebook 13 &mdash; ten techniques, one held-out evaluation set.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- Rotating quotes -->
+  <section class="py-14" style="background: var(--color-bg-alt);">
+    <div class="container-reading">
+      <span class="eyebrow">Notes from the trenches</span>
+      <blockquote class="rotating-joke font-quote text-xl md:text-2xl mt-3 text-slate-700 dark:text-slate-200" id="quote-text">
+        &ldquo;LoRA trained an entire personality with 460,000 parameters. That is fewer parameters than a decent Wordle guess.&rdquo;
+      </blockquote>
+      <div class="mt-2 text-xs uppercase tracking-widest text-slate-400" id="quote-source">Notebook 04 &middot; LoRA and DoRA</div>
+    </div>
+  </section>
+
+  <!-- Real-world use cases -->
+  <section class="container-wide py-16">
+    <div class="max-w-3xl">
+      <span class="eyebrow">Real use cases</span>
+      <h2 class="text-3xl font-bold mt-2 tracking-tight">Things we built that actually work.</h2>
+      <div class="divider-strong mt-3 mb-6"></div>
+      <p class="text-slate-600 dark:text-slate-300">
+        Two industry-serious use cases and three that have no business existing. All five are real
+        notebooks with honest evaluation.
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mt-10">
+
+      <a href="industry-usecases.html#tool-calling" class="card card--hover">
+        <div class="text-xs font-bold uppercase tracking-widest text-blue-500">Industry</div>
+        <div class="font-semibold text-lg mt-1">Agentic tool-calling SLM</div>
+        <p class="text-sm text-slate-500 mt-1">
+          Fine-tune 135M to emit structured JSON tool calls. From 10% JSON validity to 95%. Roughly 30,000
+          times cheaper per call than GPT-4.
+        </p>
+        <div class="mt-3 text-xs text-slate-400">Notebook 17</div>
+      </a>
+
+      <a href="industry-usecases.html#clinical" class="card card--hover">
+        <div class="text-xs font-bold uppercase tracking-widest text-blue-500">Industry</div>
+        <div class="font-semibold text-lg mt-1">Privacy-preserving clinical summarizer</div>
+        <p class="text-sm text-slate-500 mt-1">
+          SFT to install the format, DPO to reduce hallucination. Runs on-device. Zero patient data
+          leaves the machine.
+        </p>
+        <div class="mt-3 text-xs text-slate-400">Notebook 18</div>
+      </a>
+
+      <a href="fun-usecases.html#insults" class="card card--hover">
+        <div class="text-xs font-bold uppercase tracking-widest text-purple-500">Fun</div>
+        <div class="font-semibold text-lg mt-1">Shakespearean insult generator</div>
+        <p class="text-sm text-slate-500 mt-1">
+          A 135M model gets a personality transplant. Some outputs contain the words &ldquo;inkhorn&rdquo; and
+          &ldquo;runnels&rdquo; unironically.
+        </p>
+        <div class="mt-3 text-xs text-slate-400">Notebook 14</div>
+      </a>
+
+      <a href="fun-usecases.html#roast" class="card card--hover">
+        <div class="text-xs font-bold uppercase tracking-widest text-purple-500">Fun</div>
+        <div class="font-semibold text-lg mt-1">Code roast reviewer</div>
+        <p class="text-sm text-slate-500 mt-1">
+          Technical accuracy doubled after fine-tuning. The Gordon Ramsay tone required more than 135M
+          parameters. We reported this honestly.
+        </p>
+        <div class="mt-3 text-xs text-slate-400">Notebook 15</div>
+      </a>
+
+      <a href="fun-usecases.html#dungeon" class="card card--hover">
+        <div class="text-xs font-bold uppercase tracking-widest text-purple-500">Fun</div>
+        <div class="font-semibold text-lg mt-1">AI Dungeon Master</div>
+        <p class="text-sm text-slate-500 mt-1">
+          Two-stage SFT to DPO. Tension words up 94% over base. Adventures now include ominous breathing.
+        </p>
+        <div class="mt-3 text-xs text-slate-400">Notebook 16</div>
+      </a>
+
+      <a href="guide.html" class="card card--hover" style="border-style: dashed;">
+        <div class="text-xs font-bold uppercase tracking-widest text-green-500">Bonus</div>
+        <div class="font-semibold text-lg mt-1">Apple Silicon deep dive</div>
+        <p class="text-sm text-slate-500 mt-1">
+          MPS internals, unified memory, MLX comparison. Measured on M4 Max, honest about where cloud
+          GPUs still win.
+        </p>
+        <div class="mt-3 text-xs text-slate-400">Notebook 19</div>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- CTA banner -->
+  <section class="py-16" style="background: var(--color-bg-alt);">
+    <div class="container-reading text-center">
+      <h2 class="text-3xl font-bold tracking-tight">Ready to fine-tune something?</h2>
+      <p class="mt-3 text-slate-600 dark:text-slate-300">
+        The guide walks you through the beginner track first. About four hours of actual reading,
+        depending on how much you get distracted checking the code.
+      </p>
+      <div class="mt-6 flex flex-wrap gap-3 justify-center">
+        <a href="guide.html" class="btn btn-primary">Open the guide</a>
+        <a href="techniques.html" class="btn btn-outline">Browse techniques</a>
+        <a href="https://github.com/kumarjit88/finetuning-slm" target="_blank" rel="noopener" class="btn btn-ghost">GitHub repo</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="container-wide flex flex-wrap items-center justify-between gap-3">
+      <div>Fine-tuning small language models without losing your mind (or your GPU).</div>
+      <nav class="flex gap-4 text-xs">
+        <a class="nav-link" href="guide.html">Guide</a>
+        <a class="nav-link" href="techniques.html">Techniques</a>
+        <a class="nav-link" href="comparison.html">Comparison</a>
+        <a class="nav-link" href="https://github.com/kumarjit88/finetuning-slm" target="_blank" rel="noopener">GitHub</a>
+      </nav>
+    </div>
+  </footer>
+
+  <!-- Rotating jokes + random-technique picker -->
+  <script>
+    const QUOTES = [
+      { text: 'LoRA trained an entire personality with 460,000 parameters. That is fewer parameters than a decent Wordle guess.', src: 'Notebook 04 &middot; LoRA' },
+      { text: 'QLoRA compressed the base to 4 bits and still got the same answers. Some questions do not need 32 bits of confidence.', src: 'Notebook 05 &middot; QLoRA' },
+      { text: 'DPO taught the model that vivid narration beats flat narration. Loss went below log 2. It has opinions now.', src: 'Notebook 16 &middot; Dungeon Master' },
+      { text: 'JSON validity went from 10 percent to 95 percent. The model finally understands that braces are supposed to close.', src: 'Notebook 17 &middot; Tool calling' },
+      { text: 'The base model produced garbage after training. It turned out gradient checkpointing was still on. This bug will find you.', src: 'Notebook 14 &middot; Fun use cases' },
+      { text: 'A 135M-parameter model summarized a clinical note with 4 percent hallucination. This is not a substitute for a doctor, but it is a start.', src: 'Notebook 18 &middot; Clinical summarizer' },
+      { text: 'Model merging finished in six seconds. Because it did not train. That is the whole trick.', src: 'Notebook 10 &middot; Merging' },
+      { text: 'Prompt tuning learned 20,000 parameters worth of virtual tokens. It works. Sometimes. On the right task.', src: 'Notebook 06 &middot; Prompt tuning' }
+    ];
+
+    let qi = 0;
+    function cycleQuote() {
+      const el = document.getElementById('quote-text');
+      const src = document.getElementById('quote-source');
+      if (!el || !src) return;
+      el.style.opacity = 0;
+      setTimeout(() => {
+        qi = (qi + 1) % QUOTES.length;
+        el.innerHTML = '&ldquo;' + QUOTES[qi].text + '&rdquo;';
+        src.innerHTML = QUOTES[qi].src;
+        el.style.opacity = 1;
+      }, 400);
+    }
+    setInterval(cycleQuote, 6000);
+
+    const TECHS = [
+      { name: 'LoRA',            href: 'techniques.html#lora' },
+      { name: 'DoRA',            href: 'techniques.html#dora' },
+      { name: 'QLoRA',           href: 'techniques.html#qlora' },
+      { name: 'Prompt tuning',   href: 'techniques.html#prompt' },
+      { name: 'Prefix tuning',   href: 'techniques.html#prefix' },
+      { name: 'DPO',             href: 'techniques.html#dpo' },
+      { name: 'Distillation',    href: 'techniques.html#distill' },
+      { name: 'Model merging',   href: 'techniques.html#merge' },
+      { name: 'Full FT',         href: 'techniques.html#full' },
+      { name: 'Linear probe',    href: 'techniques.html#linear' }
+    ];
+    function pickRandomTechnique() {
+      const pick = TECHS[Math.floor(Math.random() * TECHS.length)];
+      window.location.href = pick.href;
+    }
+  </script>
+
 </body>
 </html>

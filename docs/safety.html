@@ -3,26 +3,489 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>safety — SLM Fine-Tuning Tutorial</title>
+  <title>Safety — Fine-Tuning Small Language Models</title>
+  <meta name="description" content="How fine-tuning erodes safety guardrails, how to measure it, and how to put them back. Risk taxonomy, mitigations, and a governance checklist.">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&family=Lora:ital,wght@1,500&display=swap" rel="stylesheet">
+
+  <!-- Tailwind -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { darkMode: ['selector', '[data-theme="dark"]'] };</script>
+
+  <!-- Chart.js -->
+  <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+
+  <!-- Local -->
   <link rel="stylesheet" href="css/style.css">
+  <script defer src="js/main.js"></script>
+
+  <style>
+    /* Risk-ring diagram */
+    .risk-ring {
+      position: relative;
+      width: 100%;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+    .severity-cell {
+      padding: 1rem 1.25rem;
+      border-radius: .75rem;
+      background: var(--color-bg-alt);
+      border-left: 4px solid;
+    }
+    .severity-cell.high { border-color: var(--color-danger); }
+    .severity-cell.medium { border-color: var(--color-warning); }
+    .severity-cell.low { border-color: var(--color-success); }
+    .sev-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: .35rem;
+      padding: .15rem .625rem;
+      font-size: .68rem;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      border-radius: 9999px;
+    }
+    .sev-badge.high { background: rgba(239, 68, 68, .12); color: var(--color-danger); }
+    .sev-badge.medium { background: rgba(245, 158, 11, .14); color: var(--color-warning); }
+    .sev-badge.low { background: rgba(16, 185, 129, .12); color: var(--color-success); }
+
+    /* Governance checklist */
+    .checklist-item {
+      display: flex;
+      align-items: flex-start;
+      gap: .875rem;
+      padding: .875rem 1rem;
+      background: var(--color-bg-alt);
+      border: 1px solid var(--color-border);
+      border-radius: .5rem;
+      margin-bottom: .5rem;
+      transition: border-color .15s;
+    }
+    .checklist-item:hover { border-color: var(--color-primary); }
+    .checklist-item.is-done { opacity: .6; }
+    .checklist-item.is-done .checklist-text { text-decoration: line-through; }
+    .checklist-check {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 20px; height: 20px;
+      margin-top: 2px;
+      border: 2px solid var(--color-border);
+      border-radius: 4px;
+      cursor: pointer;
+      position: relative;
+      background: var(--color-bg);
+      flex-shrink: 0;
+      transition: background .15s, border-color .15s;
+    }
+    .checklist-check:checked {
+      background: var(--color-success);
+      border-color: var(--color-success);
+    }
+    .checklist-check:checked::after {
+      content: '';
+      position: absolute;
+      top: 1px; left: 5px;
+      width: 5px; height: 10px;
+      border: solid #fff;
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg);
+    }
+    .checklist-text { font-size: .9rem; }
+  </style>
 </head>
-<body class="min-h-screen">
-  <nav class="bg-gray-900 text-white py-3 px-6">
-    <div class="max-w-6xl mx-auto flex justify-between items-center">
-      <a href="index.html" class="font-bold">SLM Fine-Tuning</a>
-      <div class="flex gap-4 text-sm">
-        <a href="techniques.html" class="hover:text-blue-300">Techniques</a>
-        <a href="comparison.html" class="hover:text-blue-300">Compare</a>
-        <a href="safety.html" class="hover:text-blue-300">Safety</a>
-        <a href="guide.html" class="hover:text-blue-300">Guide</a>
+
+<body class="antialiased">
+
+  <!-- Nav -->
+  <header class="nav-shell sticky top-0 z-40">
+    <div class="container-wide flex items-center justify-between py-3">
+      <a href="index.html" class="font-bold tracking-tight text-lg" style="color: var(--color-text);">
+        Fine-Tuning SLMs
+      </a>
+      <nav class="hidden md:flex items-center gap-6 text-sm font-medium">
+        <a href="index.html" class="nav-link">Home</a>
+        <a href="techniques.html" class="nav-link">Techniques</a>
+        <a href="comparison.html" class="nav-link">Comparison</a>
+        <a href="choosing-method.html" class="nav-link">Which Method?</a>
+        <a href="safety.html" class="nav-link">Safety</a>
+        <a href="failure-points.html" class="nav-link">Failure Points</a>
+        <a href="fun-usecases.html" class="nav-link">Fun</a>
+        <a href="industry-usecases.html" class="nav-link">Industry</a>
+        <a href="guide.html" class="nav-link">Guide</a>
+      </nav>
+      <button type="button" class="btn btn-ghost text-xs" data-theme-toggle onclick="slmToggleTheme()">Dark mode</button>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <section class="container-wide pt-10 pb-6">
+    <div class="max-w-3xl">
+      <span class="eyebrow">Responsible fine-tuning</span>
+      <h1 class="hero-tagline mt-2">
+        Fine-tuning is basically handing a very confident intern<br>
+        <span style="color: var(--color-primary);">access to your codebase.</span>
+      </h1>
+      <p class="mt-4 text-slate-600 dark:text-slate-300 text-lg leading-relaxed">
+        Powerful. Useful. Requires supervision. Here is what can go wrong when you fine-tune, why it matters
+        more than you think, and how to keep the guardrails on without turning your model into a cardboard
+        cutout that refuses to answer anything.
+      </p>
+    </div>
+  </section>
+
+  <!-- Guardrail erosion story -->
+  <section class="container-wide py-8">
+    <h2 class="section-heading">The guardrail erosion problem</h2>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+      <div>
+        <p class="text-slate-600 dark:text-slate-300">
+          Base instruct models come with safety training baked in. Fine-tuning on your task data almost always
+          erodes that training. Sometimes on purpose (you want a different tone). Sometimes by accident (your
+          dataset happens to contain a lot of examples where the assistant just does what it&#39;s told).
+        </p>
+        <p class="mt-3 text-slate-600 dark:text-slate-300">
+          Notebook 12 measured this directly. Before fine-tuning: the base model refused 87% of unsafe requests.
+          After a 200-example benign fine-tune with no safety data at all: refusal dropped to 41%. Nobody was
+          trying to make the model unsafe. The safety just quietly leaked out because it wasn&#39;t being
+          reinforced during training.
+        </p>
+        <blockquote class="callout mt-5">
+          <span class="callout-label">The uncomfortable finding</span>
+          Alignment is not a permanent property of a model. It&#39;s a set of preferences the model can be trained
+          to un-prefer. Every fine-tune should include a safety evaluation before deployment. Every fine-tune.
+        </blockquote>
+      </div>
+      <figure class="result-figure">
+        <img src="images/notebooks/safety_comparison.png" alt="Chart from notebook 12 showing safety metric erosion during benign fine-tuning" loading="lazy">
+        <figcaption>Notebook 12 &mdash; refusal rate on unsafe requests dropped from 87% to 41% after a 200-example benign fine-tune.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- Risk taxonomy -->
+  <section class="container-wide py-8">
+    <h2 class="section-heading">Risk taxonomy: what can go wrong, ranked</h2>
+    <p class="text-slate-600 dark:text-slate-300 mb-4 max-w-3xl">
+      Not every failure is a catastrophe. Not every catastrophe is a failure &mdash; sometimes a model that
+      refuses to answer is exactly the outcome you wanted. Here is a rough ranking from &ldquo;annoying&rdquo;
+      through &ldquo;career-ending&rdquo;.
+    </p>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
+      <div class="severity-cell high">
+        <div class="sev-badge high">High severity</div>
+        <div class="font-semibold mt-2">Prompt injection with tool access</div>
+        <p class="text-sm text-slate-500 mt-1">
+          Attacker instructions in user data get executed as tool calls. `delete_database("production")` at 3am.
+          Notebook 17 discusses the refuse tool for exactly this.
+        </p>
+      </div>
+
+      <div class="severity-cell high">
+        <div class="sev-badge high">High severity</div>
+        <div class="font-semibold mt-2">Fabricated medical / legal / financial advice</div>
+        <p class="text-sm text-slate-500 mt-1">
+          Hallucination in high-stakes domains. Notebook 18 uses DPO specifically to reduce this in clinical
+          summarization.
+        </p>
+      </div>
+
+      <div class="severity-cell high">
+        <div class="sev-badge high">High severity</div>
+        <div class="font-semibold mt-2">Training data leakage</div>
+        <p class="text-sm text-slate-500 mt-1">
+          Model memorizes and repeats sensitive strings verbatim. Especially likely with small models and small
+          datasets.
+        </p>
+      </div>
+
+      <div class="severity-cell medium">
+        <div class="sev-badge medium">Medium severity</div>
+        <div class="font-semibold mt-2">Refusal erosion</div>
+        <p class="text-sm text-slate-500 mt-1">
+          The model that used to say &ldquo;I can&#39;t help with that&rdquo; now says &ldquo;Sure, here&#39;s how&rdquo;. The default
+          side effect of benign fine-tuning.
+        </p>
+      </div>
+
+      <div class="severity-cell medium">
+        <div class="sev-badge medium">Medium severity</div>
+        <div class="font-semibold mt-2">Catastrophic forgetting</div>
+        <p class="text-sm text-slate-500 mt-1">
+          Fine-tune on Task A, model forgets everything else. Model that used to do 10 things now does one
+          thing very well and nine things badly.
+        </p>
+      </div>
+
+      <div class="severity-cell medium">
+        <div class="sev-badge medium">Medium severity</div>
+        <div class="font-semibold mt-2">Bias amplification</div>
+        <p class="text-sm text-slate-500 mt-1">
+          Training data reflects a demographic skew, model amplifies it. Often invisible until deployed at scale
+          against an evaluation the training set didn&#39;t cover.
+        </p>
+      </div>
+
+      <div class="severity-cell low">
+        <div class="sev-badge low">Low severity</div>
+        <div class="font-semibold mt-2">Overfitting</div>
+        <p class="text-sm text-slate-500 mt-1">
+          Model memorizes training examples, generalizes poorly. Fixable with a validation split.
+        </p>
+      </div>
+
+      <div class="severity-cell low">
+        <div class="sev-badge low">Low severity</div>
+        <div class="font-semibold mt-2">Format drift</div>
+        <p class="text-sm text-slate-500 mt-1">
+          Output no longer matches your template exactly. Annoying, rarely dangerous, usually fixable with more
+          examples or a stricter system prompt.
+        </p>
+      </div>
+
+      <div class="severity-cell low">
+        <div class="sev-badge low">Low severity</div>
+        <div class="font-semibold mt-2">Loss going NaN</div>
+        <p class="text-sm text-slate-500 mt-1">
+          Sounds scary. Almost always a learning rate that&#39;s too big. See <a class="text-blue-500 hover:underline" href="failure-points.html">Failure Points</a>.
+        </p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Mitigations -->
+  <section class="container-wide py-8">
+    <h2 class="section-heading">Mitigations that actually work</h2>
+    <p class="text-slate-600 dark:text-slate-300 mb-4 max-w-3xl">
+      Ten techniques, ranked roughly by how much of the erosion problem they solve for the effort required.
+      None of them are magic. All of them help when applied honestly.
+    </p>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+      <div class="card">
+        <div class="text-xs font-bold uppercase tracking-widest text-blue-500">Highest impact</div>
+        <div class="font-semibold mt-1">Include safety examples in the training mix</div>
+        <p class="text-sm text-slate-500 mt-1">
+          Add 5-10% of your dataset as refusal examples on unsafe queries. Doesn&#39;t hurt task performance,
+          preserves refusal behavior. Cheapest possible mitigation.
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="text-xs font-bold uppercase tracking-widest text-blue-500">Highest impact</div>
+        <div class="font-semibold mt-1">Red-team before deployment</div>
+        <p class="text-sm text-slate-500 mt-1">
+          Have people (or a red-team model) actively try to break your fine-tune. Categorize the failures. Fix
+          the ones that matter. Ship with a known failure profile.
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="text-xs font-bold uppercase tracking-widest text-blue-500">High impact</div>
+        <div class="font-semibold mt-1">DPO for refusal alignment</div>
+        <p class="text-sm text-slate-500 mt-1">
+          Preference pairs where the &ldquo;chosen&rdquo; response refuses unsafe queries and the &ldquo;rejected&rdquo; complies.
+          Sharpens refusal behavior post-SFT.
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="text-xs font-bold uppercase tracking-widest text-blue-500">High impact</div>
+        <div class="font-semibold mt-1">Track per-category metrics, not just overall</div>
+        <p class="text-sm text-slate-500 mt-1">
+          Refusal rate on chemical weapons, refusal rate on self-harm, refusal rate on doxxing. If any bucket
+          drops significantly, that&#39;s the fine-tune to reject.
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="text-xs font-bold uppercase tracking-widest text-blue-500">Medium impact</div>
+        <div class="font-semibold mt-1">Lower learning rate + more epochs</div>
+        <p class="text-sm text-slate-500 mt-1">
+          Aggressive learning rates dislodge more of the base model&#39;s original behavior. Gentler updates
+          preserve more of it, including the safety training.
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="text-xs font-bold uppercase tracking-widest text-blue-500">Medium impact</div>
+        <div class="font-semibold mt-1">Prefer PEFT over full fine-tuning</div>
+        <p class="text-sm text-slate-500 mt-1">
+          LoRA and DoRA only update a small subset of parameters. The base&#39;s safety training remains largely
+          intact. Full FT rewrites everything, including the parts you wanted to keep.
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="text-xs font-bold uppercase tracking-widest text-blue-500">Medium impact</div>
+        <div class="font-semibold mt-1">Robust system prompts</div>
+        <p class="text-sm text-slate-500 mt-1">
+          A well-crafted system prompt at inference time can partially restore refusal behavior. Not a
+          replacement for training-time safety, but a useful last line of defense.
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="text-xs font-bold uppercase tracking-widest text-blue-500">Situational</div>
+        <div class="font-semibold mt-1">Refusal classifier at the output</div>
+        <p class="text-sm text-slate-500 mt-1">
+          A separate small classifier that checks whether a generated response should be refused, and swaps
+          it for a canned refusal. Belt and braces for tool-calling agents.
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="text-xs font-bold uppercase tracking-widest text-blue-500">Situational</div>
+        <div class="font-semibold mt-1">Constitutional AI-style rewrites</div>
+        <p class="text-sm text-slate-500 mt-1">
+          Automatically rewrite training completions that violate a set of principles. Expensive but
+          systematic. Overkill for narrow tasks, essential for broadly capable models.
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="text-xs font-bold uppercase tracking-widest text-blue-500">Governance</div>
+        <div class="font-semibold mt-1">Document what you changed and why</div>
+        <p class="text-sm text-slate-500 mt-1">
+          A model card that includes the fine-tuning data source, evaluation results, known failure modes, and
+          deprecation policy. The paperwork that keeps you employed.
+        </p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Governance checklist -->
+  <section class="container-wide py-10">
+    <h2 class="section-heading">Governance checklist</h2>
+    <p class="text-slate-600 dark:text-slate-300 mb-4 max-w-3xl">
+      Tick these off before you ship. Progress persists in your browser. When they&#39;re all green, you have a
+      credible answer to the question &ldquo;how do you know this is safe to deploy?&rdquo;.
+    </p>
+    <div class="card">
+      <div id="checklist-container">
+
+        <label class="checklist-item" data-progress-item="sf1">
+          <input type="checkbox" class="checklist-check" onclick="slmToggleRead('sf1')">
+          <span class="checklist-text">I have documented the source of every training example (dataset licenses, consent, provenance).</span>
+        </label>
+        <label class="checklist-item" data-progress-item="sf2">
+          <input type="checkbox" class="checklist-check" onclick="slmToggleRead('sf2')">
+          <span class="checklist-text">I have a held-out evaluation set the model has never seen during training.</span>
+        </label>
+        <label class="checklist-item" data-progress-item="sf3">
+          <input type="checkbox" class="checklist-check" onclick="slmToggleRead('sf3')">
+          <span class="checklist-text">I measured refusal rates on a safety-red-team set before and after fine-tuning.</span>
+        </label>
+        <label class="checklist-item" data-progress-item="sf4">
+          <input type="checkbox" class="checklist-check" onclick="slmToggleRead('sf4')">
+          <span class="checklist-text">Refusal rates on the safety set did not regress by more than 5% versus the base model.</span>
+        </label>
+        <label class="checklist-item" data-progress-item="sf5">
+          <input type="checkbox" class="checklist-check" onclick="slmToggleRead('sf5')">
+          <span class="checklist-text">I ran a data-leakage check for high-frequency training strings appearing verbatim in outputs.</span>
+        </label>
+        <label class="checklist-item" data-progress-item="sf6">
+          <input type="checkbox" class="checklist-check" onclick="slmToggleRead('sf6')">
+          <span class="checklist-text">The model card documents intended use, out-of-scope use, and known failure modes.</span>
+        </label>
+        <label class="checklist-item" data-progress-item="sf7">
+          <input type="checkbox" class="checklist-check" onclick="slmToggleRead('sf7')">
+          <span class="checklist-text">I have a rollback plan (the exact previous model version is preserved and callable).</span>
+        </label>
+        <label class="checklist-item" data-progress-item="sf8">
+          <input type="checkbox" class="checklist-check" onclick="slmToggleRead('sf8')">
+          <span class="checklist-text">Production monitoring includes at least: error rate, refusal rate, and a random sample review.</span>
+        </label>
+        <label class="checklist-item" data-progress-item="sf9">
+          <input type="checkbox" class="checklist-check" onclick="slmToggleRead('sf9')">
+          <span class="checklist-text">A human is on-call to receive alerts when safety metrics drift by more than a threshold.</span>
+        </label>
+        <label class="checklist-item" data-progress-item="sf10">
+          <input type="checkbox" class="checklist-check" onclick="slmToggleRead('sf10')">
+          <span class="checklist-text">The system prompt reinforces refusal behavior for known-dangerous request patterns.</span>
+        </label>
+        <label class="checklist-item" data-progress-item="sf11">
+          <input type="checkbox" class="checklist-check" onclick="slmToggleRead('sf11')">
+          <span class="checklist-text">If the model has tool access, tool calls are sandboxed and require confirmation for destructive ones.</span>
+        </label>
+        <label class="checklist-item" data-progress-item="sf12">
+          <input type="checkbox" class="checklist-check" onclick="slmToggleRead('sf12')">
+          <span class="checklist-text">There is a written policy for when the model must be retrained or decommissioned.</span>
+        </label>
+
+      </div>
+      <div class="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between">
+        <div class="text-sm text-slate-500">Progress: <span id="checklist-count">0</span> / 12</div>
+        <button type="button" class="btn btn-ghost text-sm" onclick="resetChecklist()">Reset</button>
       </div>
     </div>
-  </nav>
-  <main class="max-w-4xl mx-auto px-6 py-12">
-    <h1 class="text-3xl font-bold mb-6">safety</h1>
-    <p class="text-gray-500">🚧 Under development</p>
-  </main>
-  <script src="js/main.js"></script>
+  </section>
+
+  <!-- Closing thought -->
+  <section class="container-wide py-10">
+    <blockquote class="callout max-w-3xl">
+      <span class="callout-label">The bottom line</span>
+      Safety is not a feature you can bolt on after training. It&#39;s a property of the whole pipeline: the data
+      you chose, the technique you used, the hyperparameters you set, and the evaluation you did before
+      shipping. Every step matters. Miss one and the whole chain breaks quietly.
+    </blockquote>
+  </section>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="container-wide flex flex-wrap items-center justify-between gap-3">
+      <div>Fine-tuning small language models without losing your mind (or your GPU).</div>
+      <nav class="flex gap-4 text-xs">
+        <a class="nav-link" href="failure-points.html">Failure Points</a>
+        <a class="nav-link" href="techniques.html">Techniques</a>
+        <a class="nav-link" href="guide.html">Guide</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script>
+    // Custom count updater for the safety-only checklist
+    function updateSafetyCount() {
+      const done = document.querySelectorAll('.checklist-check:checked').length;
+      document.getElementById('checklist-count').textContent = done;
+      document.querySelectorAll('.checklist-item').forEach(el => {
+        const cb = el.querySelector('.checklist-check');
+        el.classList.toggle('is-done', cb.checked);
+      });
+    }
+    document.addEventListener('DOMContentLoaded', () => {
+      // Restore state from localStorage (set by slmToggleRead in main.js)
+      try {
+        const stored = new Set(JSON.parse(localStorage.getItem('slm-progress') || '[]'));
+        document.querySelectorAll('[data-progress-item]').forEach(el => {
+          const id = el.getAttribute('data-progress-item');
+          if (id && id.startsWith('sf') && stored.has(id)) {
+            el.querySelector('.checklist-check').checked = true;
+          }
+        });
+      } catch (_) {}
+      updateSafetyCount();
+      document.querySelectorAll('.checklist-check').forEach(cb => {
+        cb.addEventListener('change', updateSafetyCount);
+      });
+    });
+    function resetChecklist() {
+      if (!confirm('Clear the safety checklist?')) return;
+      try {
+        const stored = new Set(JSON.parse(localStorage.getItem('slm-progress') || '[]'));
+        ['sf1','sf2','sf3','sf4','sf5','sf6','sf7','sf8','sf9','sf10','sf11','sf12'].forEach(id => stored.delete(id));
+        localStorage.setItem('slm-progress', JSON.stringify(Array.from(stored)));
+      } catch (_) {}
+      document.querySelectorAll('.checklist-check').forEach(cb => cb.checked = false);
+      updateSafetyCount();
+    }
+  </script>
 </body>
 </html>

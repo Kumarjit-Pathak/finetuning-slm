@@ -3,427 +3,1279 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Fine-Tuning Techniques — SLM Fine-Tuning Tutorial</title>
-  <meta name="description" content="Every fine-tuning technique explained — from brute force full fine-tuning to surgical precision adapters. Understand what each method does, when to use it, and common pitfalls.">
+  <title>Techniques — Fine-Tuning Small Language Models</title>
+  <meta name="description" content="Ten fine-tuning techniques for small language models, explained without buzzwords. Architecture diagrams, math, code, and honest results.">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&family=Lora:ital,wght@1,500&display=swap" rel="stylesheet">
+
+  <!-- Tailwind (CDN — no build step) -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
-    tailwind.config = {
-      darkMode: ['selector', '[data-theme="dark"]'],
-    }
+    tailwind.config = { darkMode: ['selector', '[data-theme="dark"]'] };
   </script>
+
+  <!-- KaTeX -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+
+  <!-- Prism (syntax highlighting) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-python.min.js"></script>
+
+  <!-- Chart.js -->
+  <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+
+  <!-- Local -->
   <link rel="stylesheet" href="css/style.css">
+  <script defer src="js/main.js"></script>
 </head>
-<body class="min-h-screen bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 transition-colors">
 
-  <!-- Navigation -->
-  <nav class="bg-gray-900 text-white py-3 px-6 sticky top-0 z-50 shadow-lg">
-    <div class="max-w-6xl mx-auto flex justify-between items-center">
-      <a href="index.html" class="font-bold text-lg">SLM Fine-Tuning</a>
-      <div class="hidden md:flex gap-4 text-sm">
-        <a href="techniques.html" class="text-blue-300 font-semibold">Techniques</a>
-        <a href="comparison.html" class="hover:text-blue-300 transition-colors">Compare</a>
-        <a href="choosing-method.html" class="hover:text-blue-300 transition-colors">Which Method?</a>
-        <a href="safety.html" class="hover:text-blue-300 transition-colors">Safety</a>
-        <a href="guide.html" class="hover:text-blue-300 transition-colors">Guide</a>
+<body class="antialiased">
+
+  <!-- ========================================================
+       Top navigation
+       ==================================================== -->
+  <header class="nav-shell sticky top-0 z-40">
+    <div class="container-wide flex items-center justify-between py-3">
+      <a href="index.html" class="font-bold tracking-tight text-lg" style="color: var(--color-text);">
+        Fine-Tuning SLMs
+      </a>
+      <nav class="hidden md:flex items-center gap-6 text-sm font-medium">
+        <a href="index.html" class="nav-link">Home</a>
+        <a href="techniques.html" class="nav-link">Techniques</a>
+        <a href="comparison.html" class="nav-link">Comparison</a>
+        <a href="choosing-method.html" class="nav-link">Which Method?</a>
+        <a href="safety.html" class="nav-link">Safety</a>
+        <a href="failure-points.html" class="nav-link">Failure Points</a>
+        <a href="fun-usecases.html" class="nav-link">Fun</a>
+        <a href="industry-usecases.html" class="nav-link">Industry</a>
+        <a href="guide.html" class="nav-link">Guide</a>
+      </nav>
+      <div class="flex items-center gap-2">
+        <button type="button" class="btn btn-ghost text-xs" data-theme-toggle onclick="slmToggleTheme()">Dark mode</button>
       </div>
-      <button onclick="toggleDarkMode()" class="text-sm bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded-md transition-colors" aria-label="Toggle dark mode">
-        🌓
-      </button>
-    </div>
-  </nav>
-
-  <!-- Hero Section -->
-  <header class="bg-gradient-to-br from-orange-500 via-red-500 to-pink-600 text-white py-20">
-    <div class="max-w-4xl mx-auto px-6 text-center">
-      <p class="text-orange-200 text-sm font-semibold uppercase tracking-wide mb-3">The Deep Dive</p>
-      <h1 class="text-4xl md:text-5xl font-bold mb-6 leading-tight">
-        Fine-Tuning Techniques:<br class="hidden sm:block"> From Brute Force to Surgical Precision
-      </h1>
-      <p class="text-xl md:text-2xl opacity-90 max-w-2xl mx-auto leading-relaxed">
-        Every technique explained — what it does, when it shines, and when it'll set your GPU (and your patience) on fire. Think of this as the menu at a fine-tuning restaurant.
-      </p>
-      <p class="mt-6 text-orange-200 text-base italic">
-        "Choosing a fine-tuning method without understanding the options is like ordering off the menu in a language you don't speak. You might get filet mignon… or you might get tripe."
-      </p>
     </div>
   </header>
 
-  <main class="max-w-4xl mx-auto px-6 py-16 space-y-20">
+  <!-- ========================================================
+       Page hero
+       ==================================================== -->
+  <section class="container-wide pt-10 pb-6">
+    <div class="max-w-3xl">
+      <span class="eyebrow">The main event</span>
+      <h1 class="hero-tagline mt-2">
+        Ten techniques.<br>One question: which one won&#39;t melt your laptop?
+      </h1>
+      <p class="mt-4 text-slate-600 dark:text-slate-300 text-lg leading-relaxed">
+        Every fine-tuning technique in this tutorial, explained without buzzwords. Each tab has an
+        architecture diagram, the math (rendered, not screenshotted), code you can copy, and a chart
+        from the notebook that actually ran it. No stock photos of neural networks. No metaphors
+        involving cake.
+      </p>
+    </div>
+  </section>
 
-    <!-- Page TOC -->
-    <nav class="bg-slate-50 dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700" aria-label="Page contents">
-      <h2 class="font-bold text-lg mb-3">Techniques Covered</h2>
-      <ol class="list-decimal list-inside space-y-1 text-sm text-slate-600 dark:text-slate-300">
-        <li><a href="#full-finetuning" class="hover:text-blue-600 dark:hover:text-blue-400 font-medium">Full Fine-Tuning</a> — The "update everything" approach</li>
-        <li class="text-slate-400 dark:text-slate-500">LoRA & QLoRA — <em>coming soon</em></li>
-        <li class="text-slate-400 dark:text-slate-500">Prompt Tuning — <em>coming soon</em></li>
-        <li class="text-slate-400 dark:text-slate-500">Adapter Layers — <em>coming soon</em></li>
-        <li class="text-slate-400 dark:text-slate-500">DPO / RLHF — <em>coming soon</em></li>
-      </ol>
-    </nav>
+  <!-- ========================================================
+       Main layout: sidebar + content
+       ==================================================== -->
+  <div class="container-wide grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-8 pb-16">
 
-    <!-- ═══════════════════════════════════════════ -->
-    <!-- TECHNIQUE 1: Full Fine-Tuning              -->
-    <!-- ═══════════════════════════════════════════ -->
-    <section id="full-finetuning" class="space-y-10">
+    <!-- Side navigation (technique jump list) -->
+    <aside class="side-nav hidden lg:block">
+      <div class="text-xs font-bold uppercase tracking-widest text-slate-500 mb-2 px-3">
+        Ten techniques
+      </div>
+      <ul data-tab-group>
+        <li><a href="#lora"          data-tab="lora"          class="active">LoRA</a></li>
+        <li><a href="#dora"          data-tab="dora">DoRA</a></li>
+        <li><a href="#qlora"         data-tab="qlora">QLoRA</a></li>
+        <li><a href="#full"          data-tab="full">Full fine-tuning</a></li>
+        <li><a href="#linear"        data-tab="linear">Linear probing</a></li>
+        <li><a href="#prompt"        data-tab="prompt">Prompt tuning</a></li>
+        <li><a href="#prefix"        data-tab="prefix">Prefix tuning</a></li>
+        <li><a href="#dpo"           data-tab="dpo">DPO</a></li>
+        <li><a href="#distill"       data-tab="distill">Distillation</a></li>
+        <li><a href="#merge"         data-tab="merge">Model merging</a></li>
+      </ul>
 
-      <!-- Section Header -->
-      <div class="border-b-2 border-orange-400 pb-4">
-        <span class="inline-block bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full mb-3">Technique #1</span>
-        <h2 class="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white">Full Fine-Tuning</h2>
-        <p class="text-lg text-slate-600 dark:text-slate-300 mt-2">
-          The OG. The brute-force champion. The "I have compute and I'm not afraid to use it" approach.
-        </p>
+      <div class="text-xs font-bold uppercase tracking-widest text-slate-500 mt-6 mb-2 px-3">
+        See also
+      </div>
+      <ul>
+        <li><a href="comparison.html">Compare all</a></li>
+        <li><a href="choosing-method.html">Which one for my task?</a></li>
+        <li><a href="guide.html">Learning path</a></li>
+      </ul>
+    </aside>
+
+    <!-- Content: technique tabs -->
+    <main data-tab-group>
+
+      <!-- Mobile-friendly tab bar -->
+      <div class="tabs" role="tablist" aria-label="Fine-tuning techniques">
+        <button class="tab-button active" data-tab="lora"   data-update-hash="true" role="tab" aria-selected="true">LoRA</button>
+        <button class="tab-button"        data-tab="dora"   data-update-hash="true" role="tab" aria-selected="false">DoRA</button>
+        <button class="tab-button"        data-tab="qlora"  data-update-hash="true" role="tab" aria-selected="false">QLoRA</button>
+        <button class="tab-button"        data-tab="full"   data-update-hash="true" role="tab" aria-selected="false">Full FT</button>
+        <button class="tab-button"        data-tab="linear" data-update-hash="true" role="tab" aria-selected="false">Linear probe</button>
+        <button class="tab-button"        data-tab="prompt" data-update-hash="true" role="tab" aria-selected="false">Prompt tuning</button>
+        <button class="tab-button"        data-tab="prefix" data-update-hash="true" role="tab" aria-selected="false">Prefix tuning</button>
+        <button class="tab-button"        data-tab="dpo"    data-update-hash="true" role="tab" aria-selected="false">DPO</button>
+        <button class="tab-button"        data-tab="distill" data-update-hash="true" role="tab" aria-selected="false">Distillation</button>
+        <button class="tab-button"        data-tab="merge"  data-update-hash="true" role="tab" aria-selected="false">Merging</button>
       </div>
 
-      <!-- What is Full Fine-Tuning? -->
-      <div class="technique-card border-l-4 border-orange-500">
-        <h3 class="text-xl font-bold text-orange-600 dark:text-orange-400 mb-3">🔥 What is Full Fine-Tuning?</h3>
-        <p class="text-slate-600 dark:text-slate-300 mb-4">
-          Full fine-tuning means you take a pre-trained model and update <strong>every single parameter</strong> on your task-specific data. All the weights, all the layers, all the attention heads — everything gets a chance to learn from your dataset.
-        </p>
-        <p class="text-slate-600 dark:text-slate-300 mb-4">
-          It's conceptually the simplest approach: you already have weights that "know language" from pre-training, and you continue gradient descent on your data. The model's entire capacity is available to adapt to your task.
-        </p>
-        <p class="text-slate-600 dark:text-slate-300">
-          Think of it like remodeling an entire house. Sure, the foundation is solid (pre-trained knowledge), but you're repainting every room, replacing the fixtures, and maybe knocking out a wall or two. It's thorough — but it's also expensive and you might accidentally damage the plumbing. 🏠🔨
-        </p>
-      </div>
+      <!-- ============================================
+           TAB PANEL: LoRA (the exemplar — fully built)
+           ============================================ -->
+      <section class="tab-panel active" data-panel="lora" role="tabpanel">
 
-      <!-- When to Use / When NOT to Use -->
-      <div class="grid gap-6 md:grid-cols-2">
-        <div class="technique-card border-l-4 border-green-500">
-          <h3 class="text-lg font-bold text-green-600 dark:text-green-400 mb-3">✅ When to Use</h3>
-          <ul class="space-y-2 text-sm text-slate-600 dark:text-slate-300">
-            <li class="flex items-start gap-2">
-              <span class="text-green-500 mt-0.5">●</span>
-              <span><strong>Small models (≤500M params)</strong> — memory is manageable, training is fast</span>
-            </li>
-            <li class="flex items-start gap-2">
-              <span class="text-green-500 mt-0.5">●</span>
-              <span><strong>Maximum task quality needed</strong> — you want every last drop of performance</span>
-            </li>
-            <li class="flex items-start gap-2">
-              <span class="text-green-500 mt-0.5">●</span>
-              <span><strong>Sufficient compute available</strong> — you have the GPU VRAM and time</span>
-            </li>
-            <li class="flex items-start gap-2">
-              <span class="text-green-500 mt-0.5">●</span>
-              <span><strong>Your task differs significantly from pre-training</strong> — the model needs deep adaptation</span>
-            </li>
-            <li class="flex items-start gap-2">
-              <span class="text-green-500 mt-0.5">●</span>
-              <span><strong>You only need one model</strong> — not serving multiple adapters</span>
-            </li>
-          </ul>
+        <!-- Header row: title + badges + notebook link -->
+        <div class="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <span class="eyebrow">Parameter-efficient fine-tuning</span>
+            <h2 class="text-3xl font-bold mt-1 tracking-tight">LoRA — Low-Rank Adaptation</h2>
+            <p class="mt-2 max-w-2xl text-slate-600 dark:text-slate-300">
+              Freeze the base model. Train two tiny matrices whose product approximates the weight update.
+              A Post-it note for a 135M-parameter brain.
+            </p>
+          </div>
+          <div class="flex flex-col items-end gap-2 shrink-0">
+            <a href="https://github.com/kumarjit88/finetuning-slm/blob/main/notebooks/04_lora_and_dora_finetuning.ipynb"
+               target="_blank" rel="noopener"
+               class="btn btn-primary text-sm">Open the notebook</a>
+            <div class="flex gap-1.5 flex-wrap justify-end">
+              <span class="badge badge-primary">PEFT</span>
+              <span class="badge badge-success">Low memory</span>
+              <span class="badge badge-neutral">rank r = 8</span>
+            </div>
+          </div>
         </div>
 
-        <div class="technique-card border-l-4 border-red-500">
-          <h3 class="text-lg font-bold text-red-600 dark:text-red-400 mb-3">❌ When NOT to Use</h3>
-          <ul class="space-y-2 text-sm text-slate-600 dark:text-slate-300">
-            <li class="flex items-start gap-2">
-              <span class="text-red-500 mt-0.5">●</span>
-              <span><strong>Large models (>1B params)</strong> — VRAM goes brrr and your wallet goes 😭</span>
-            </li>
-            <li class="flex items-start gap-2">
-              <span class="text-red-500 mt-0.5">●</span>
-              <span><strong>Limited VRAM</strong> — full FT of a 1B model needs ~12GB+ just for optimizer states</span>
-            </li>
-            <li class="flex items-start gap-2">
-              <span class="text-red-500 mt-0.5">●</span>
-              <span><strong>Risk of catastrophic forgetting</strong> — the model "forgets" its original capabilities</span>
-            </li>
-            <li class="flex items-start gap-2">
-              <span class="text-red-500 mt-0.5">●</span>
-              <span><strong>Small dataset</strong> — overfitting is almost guaranteed with few examples</span>
-            </li>
-            <li class="flex items-start gap-2">
-              <span class="text-red-500 mt-0.5">●</span>
-              <span><strong>Multi-tenant serving</strong> — you can't easily swap full models per user</span>
-            </li>
-          </ul>
-        </div>
-      </div>
+        <!-- Joke banner -->
+        <blockquote class="callout mt-6">
+          <span class="callout-label">The one-liner</span>
+          &ldquo;LoRA is the fine-tuning equivalent of teaching a 135M-parameter model new tricks with 460,000
+          parameters. That is fewer parameters than a decent Wordle guess, and yet somehow it works
+          well enough that the entire NLP field pivoted to it in about 18 months.&rdquo;
+        </blockquote>
 
-      <!-- How it Works -->
-      <div class="technique-card border-l-4 border-blue-500">
-        <h3 class="text-xl font-bold text-blue-600 dark:text-blue-400 mb-3">⚙️ How it Works</h3>
-        <p class="text-slate-600 dark:text-slate-300 mb-4">
-          The recipe is beautifully simple (which is part of the appeal):
-        </p>
-        <ol class="space-y-3 text-slate-600 dark:text-slate-300">
-          <li class="flex items-start gap-3">
-            <span class="flex-shrink-0 w-7 h-7 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded-full flex items-center justify-center text-sm font-bold">1</span>
-            <span><strong>Load pre-trained weights</strong> — start from a checkpoint that already understands language structure</span>
-          </li>
-          <li class="flex items-start gap-3">
-            <span class="flex-shrink-0 w-7 h-7 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded-full flex items-center justify-center text-sm font-bold">2</span>
-            <span><strong>Prepare your dataset</strong> — tokenize, format, and batch your task-specific data</span>
-          </li>
-          <li class="flex items-start gap-3">
-            <span class="flex-shrink-0 w-7 h-7 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded-full flex items-center justify-center text-sm font-bold">3</span>
-            <span><strong>Run gradient descent</strong> — backprop through ALL layers, updating every parameter</span>
-          </li>
-          <li class="flex items-start gap-3">
-            <span class="flex-shrink-0 w-7 h-7 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded-full flex items-center justify-center text-sm font-bold">4</span>
-            <span><strong>Save the entire model</strong> — the result is a completely new set of weights (same architecture, different values)</span>
-          </li>
-        </ol>
-        <div class="mt-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-          <p class="text-sm text-blue-800 dark:text-blue-200">
-            <strong>💡 Key insight:</strong> Unlike LoRA (which learns a small "diff"), full fine-tuning produces a model that's the same <em>size</em> as the original but with completely different parameter values. You can't easily merge it or swap between tasks — it's a whole new model.
+        <!-- HOW IT WORKS -->
+        <h3 class="section-heading">How it works</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+          <figure class="result-figure">
+            <img src="images/diagrams/lora_architecture.svg" alt="LoRA architecture diagram: a frozen weight matrix W with a trainable low-rank update B times A added to its output." loading="lazy">
+            <figcaption>Frozen base weights <em>W</em>. Trainable low-rank matrices <em>A</em> and <em>B</em>. Their product is added at inference.</figcaption>
+          </figure>
+          <div>
+            <p>
+              A dense weight matrix in a transformer has shape <code>d × d</code>. Full fine-tuning updates every entry —
+              that is <code>d²</code> gradients per layer, per step. LoRA instead trains two much smaller matrices,
+              <code>A</code> of shape <code>r × d</code> and <code>B</code> of shape <code>d × r</code>, and reconstructs the
+              weight update as <code>B·A</code>. The base <code>W</code> stays frozen.
+            </p>
+            <p class="mt-3">
+              With <code>r = 8</code> and <code>d = 576</code>, that is <strong>36×</strong> fewer trainable parameters per
+              matrix. Because the update is a low-rank decomposition, you can fold <code>B·A</code> back into <code>W</code>
+              at deployment time and pay <em>zero</em> inference overhead. The model looks and runs like the base,
+              but behaves like the fine-tune.
+            </p>
+          </div>
+        </div>
+
+        <!-- MATH -->
+        <h3 class="section-heading">The math (four lines, no cheating)</h3>
+        <div class="card">
+          <div class="text-sm text-slate-500 mb-2">Forward pass</div>
+          <div class="text-lg">$$h = W_0 x + \Delta W\, x = W_0 x + \tfrac{\alpha}{r} \, B A\, x$$</div>
+          <div class="text-sm text-slate-500 mt-4 mb-2">Only <em>A</em> and <em>B</em> receive gradients</div>
+          <div class="text-lg">$$W_0 \in \mathbb{R}^{d \times d}, \quad A \in \mathbb{R}^{r \times d}, \quad B \in \mathbb{R}^{d \times r}, \quad r \ll d$$</div>
+          <div class="text-sm text-slate-500 mt-4 mb-2">Trainable parameter count vs full FT</div>
+          <div class="text-lg">$$\underbrace{2 \cdot d \cdot r}_{\text{LoRA}} \; \ll \; \underbrace{d^2}_{\text{full FT}}$$</div>
+          <p class="text-sm mt-4 text-slate-500">
+            <code>alpha</code> is a scaling knob (we use 16 with <code>r=8</code>). Higher alpha = larger effective update
+            magnitude. The ratio <code>alpha / r</code> keeps behavior consistent when you sweep <code>r</code>.
           </p>
         </div>
-      </div>
 
-      <!-- Key Parameters -->
-      <div class="technique-card border-l-4 border-purple-500">
-        <h3 class="text-xl font-bold text-purple-600 dark:text-purple-400 mb-3">🎛️ Key Parameters</h3>
-        <p class="text-slate-600 dark:text-slate-300 mb-4">
-          These are the knobs you'll be turning. Get them wrong and your model either doesn't learn or learns to produce hot garbage.
-        </p>
-        <div class="overflow-x-auto">
-          <table class="comparison-table w-full text-sm border-collapse rounded-lg overflow-hidden shadow-sm">
-            <thead>
-              <tr class="bg-slate-100 dark:bg-slate-700">
-                <th class="text-left p-3 font-semibold">Parameter</th>
-                <th class="text-left p-3 font-semibold">Typical Range</th>
-                <th class="text-left p-3 font-semibold">Why It Matters</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-200 dark:divide-slate-600">
-              <tr class="hover:bg-slate-50 dark:hover:bg-slate-800">
-                <td class="p-3 font-medium">Learning Rate</td>
-                <td class="p-3"><code class="text-xs bg-slate-200 dark:bg-slate-600 px-1.5 py-0.5 rounded">1e-5 → 5e-5</code></td>
-                <td class="p-3">Too high = catastrophic forgetting. Too low = your model naps through training.</td>
-              </tr>
-              <tr class="hover:bg-slate-50 dark:hover:bg-slate-800">
-                <td class="p-3 font-medium">Epochs</td>
-                <td class="p-3"><code class="text-xs bg-slate-200 dark:bg-slate-600 px-1.5 py-0.5 rounded">1 → 5</code></td>
-                <td class="p-3">More passes = more memorization. For small datasets, even 3 epochs can overfit.</td>
-              </tr>
-              <tr class="hover:bg-slate-50 dark:hover:bg-slate-800">
-                <td class="p-3 font-medium">Batch Size</td>
-                <td class="p-3"><code class="text-xs bg-slate-200 dark:bg-slate-600 px-1.5 py-0.5 rounded">4 → 32</code></td>
-                <td class="p-3">Larger = smoother gradients, more VRAM. Smaller = noisier but fits in memory.</td>
-              </tr>
-              <tr class="hover:bg-slate-50 dark:hover:bg-slate-800">
-                <td class="p-3 font-medium">Warmup Steps</td>
-                <td class="p-3"><code class="text-xs bg-slate-200 dark:bg-slate-600 px-1.5 py-0.5 rounded">5%–10% of total</code></td>
-                <td class="p-3">Lets the optimizer "ease in" instead of yeeting gradients at full speed immediately.</td>
-              </tr>
-              <tr class="hover:bg-slate-50 dark:hover:bg-slate-800">
-                <td class="p-3 font-medium">Weight Decay</td>
-                <td class="p-3"><code class="text-xs bg-slate-200 dark:bg-slate-600 px-1.5 py-0.5 rounded">0.01 → 0.1</code></td>
-                <td class="p-3">Regularization to prevent overfitting. Think of it as a "don't go too crazy" tax.</td>
-              </tr>
-              <tr class="hover:bg-slate-50 dark:hover:bg-slate-800">
-                <td class="p-3 font-medium">Max Seq Length</td>
-                <td class="p-3"><code class="text-xs bg-slate-200 dark:bg-slate-600 px-1.5 py-0.5 rounded">512 → 2048</code></td>
-                <td class="p-3">VRAM scales quadratically with attention. Longer context = exponentially more memory.</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Memory Requirements -->
-      <div class="technique-card border-l-4 border-yellow-500">
-        <h3 class="text-xl font-bold text-yellow-600 dark:text-yellow-400 mb-3">💾 Memory Requirements</h3>
-        <p class="text-slate-600 dark:text-slate-300 mb-4">
-          Full fine-tuning is the most memory-hungry technique. Here's why: you need to store the model weights, the gradients, <em>and</em> the optimizer states (Adam keeps two momentum buffers per parameter). That's roughly <strong>4× the model size</strong> in VRAM.
-        </p>
-        <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mb-4">
-          <p class="text-sm text-yellow-800 dark:text-yellow-200 font-medium mb-2">📐 Quick math for FP32 training:</p>
-          <ul class="text-sm text-yellow-700 dark:text-yellow-300 space-y-1 list-disc list-inside">
-            <li>Model weights: <strong>4 bytes × params</strong></li>
-            <li>Gradients: <strong>4 bytes × params</strong></li>
-            <li>Optimizer states (Adam): <strong>8 bytes × params</strong></li>
-            <li>Activations: varies with batch size &amp; seq length</li>
-            <li><strong>Total ≈ 16–20 bytes per parameter</strong> (before activations)</li>
-          </ul>
+        <!-- WHEN TO USE / NOT -->
+        <h3 class="section-heading">When to reach for it</h3>
+        <div class="pros-cons">
+          <div class="pros">
+            <div class="font-semibold mb-2" style="color: var(--color-success);">Use LoRA when</div>
+            <ul class="text-sm">
+              <li>You have less than 24 GB of VRAM (or you rent by the hour).</li>
+              <li>You want to keep the base model reusable — one base, many adapters.</li>
+              <li>You are teaching a style, format, or task, not new world knowledge.</li>
+              <li>You need adapters you can ship separately from the base model.</li>
+              <li>You want to fuse the update into <em>W</em> at deployment for zero overhead.</li>
+            </ul>
+          </div>
+          <div class="cons">
+            <div class="font-semibold mb-2" style="color: var(--color-danger);">Skip LoRA when</div>
+            <ul class="text-sm">
+              <li>The task genuinely needs new factual knowledge that is not in the base.</li>
+              <li>You have infinite budget and want the last 0.5% of quality.</li>
+              <li>Rank capacity is too small for the task — solved by raising <code>r</code>, not by giving up.</li>
+              <li>You are aligning behavior to preferences — use <a href="#dpo">DPO</a> instead.</li>
+            </ul>
+          </div>
         </div>
 
-        <!-- Memory comparison image -->
-        <figure class="my-6">
-          <img src="images/memory-comparison.svg" alt="Memory comparison across fine-tuning techniques: Full FT vs LoRA vs QLoRA vs Prompt Tuning" class="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-2">
-          <figcaption class="text-xs text-slate-500 dark:text-slate-400 mt-2 text-center italic">
-            Memory footprint comparison across techniques. Full fine-tuning sits firmly at "bring your biggest GPU" territory.
-          </figcaption>
+        <!-- CODE -->
+        <h3 class="section-heading">The code — copy and go</h3>
+        <div class="code-toolbar">
+<pre><code class="language-python">from peft import LoraConfig, get_peft_model, TaskType
+from trl import SFTTrainer, SFTConfig
+
+# 1. LoRA config: rank 8, alpha 16, applied to q_proj and v_proj
+lora_cfg = LoraConfig(
+    r=8, lora_alpha=16,
+    target_modules=["q_proj", "v_proj"],
+    lora_dropout=0.05, bias="none",
+    task_type=TaskType.CAUSAL_LM,
+)
+model = get_peft_model(base_model, lora_cfg)
+
+# 2. SFT config — max_length, NOT max_seq_length (trl 1.9.x renamed it)
+sft_config = SFTConfig(
+    output_dir="/tmp/lora_out",
+    num_train_epochs=6,
+    per_device_train_batch_size=2,
+    gradient_accumulation_steps=2,
+    learning_rate=2e-4,
+    max_length=384,
+    dataset_text_field="text",
+    packing=False, save_strategy="no", report_to="none",
+)
+
+# 3. Train
+trainer = SFTTrainer(model=model, args=sft_config, train_dataset=ds)
+trainer.train()
+
+# 4. CRITICAL — disable gradient checkpointing before generation
+model.gradient_checkpointing_disable()
+model.config.use_cache = True
+model.eval()</code></pre>
+        </div>
+
+        <!-- RESULTS -->
+        <h3 class="section-heading">What actually happened when we ran it</h3>
+        <p class="text-slate-600 dark:text-slate-300 max-w-3xl">
+          On SmolLM2-135M-Instruct with a 24-example medical QA dataset, LoRA lifted ROUGE-1 from 0.44 to
+          0.67 with 460K trainable parameters (out of 135M). Full fine-tuning got 0.71 with 300× more
+          trainable parameters and ~10× the peak memory. That&#39;s the trade.
+        </p>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 items-stretch">
+          <figure class="result-figure">
+            <img src="images/notebooks/lora_dora_comparison.png"
+                 alt="Bar chart from notebook 04 comparing LoRA and DoRA on ROUGE-1, training time, and trainable parameter count."
+                 loading="lazy">
+            <figcaption>Notebook 04 output — LoRA vs DoRA on SmolLM2-135M. Both beat the base by ~50%.</figcaption>
+          </figure>
+          <div class="chart-wrap">
+            <canvas id="lora-chart" aria-label="Interactive chart: trainable parameters vs quality across techniques"></canvas>
+          </div>
+        </div>
+
+        <!-- KEY LESSONS -->
+        <h3 class="section-heading">Two lessons from actually running it</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="card card--accent">
+            <div class="text-xs font-bold uppercase tracking-widest text-blue-500 mb-1">Lesson 1</div>
+            <div class="font-semibold mb-1">Turn off gradient checkpointing before generation.</div>
+            <p class="text-sm text-slate-600 dark:text-slate-300">
+              <code>SFTTrainer</code> quietly enables checkpointing. When you call <code>model.generate()</code>,
+              transformers detects checkpointing is on and forces <code>use_cache=False</code>. Every generated
+              token then re-runs the full forward pass. Output looks like garbage. Fix:
+              <code>model.gradient_checkpointing_disable(); model.config.use_cache = True</code>.
+              We rediscovered this bug three times before writing it down.
+            </p>
+          </div>
+          <div class="card card--accent">
+            <div class="text-xs font-bold uppercase tracking-widest text-blue-500 mb-1">Lesson 2</div>
+            <div class="font-semibold mb-1">Chat templates are not optional on instruct models.</div>
+            <p class="text-sm text-slate-600 dark:text-slate-300">
+              Training with plain <code>&quot;Topic: X\nAnswer:&quot;</code> completion format on
+              SmolLM2-Instruct silently underperforms because the model is trained to expect ChatML.
+              Always call <code>tokenizer.apply_chat_template([...])</code>. The results table gets a lot
+              nicer after this.
+            </p>
+          </div>
+        </div>
+
+        <!-- FURTHER -->
+        <h3 class="section-heading">See also</h3>
+        <ul class="list-disc pl-6 text-slate-600 dark:text-slate-300 space-y-1">
+          <li><a class="text-blue-600 hover:underline" href="#dora">DoRA</a> — LoRA plus a magnitude vector; sometimes better, always heavier.</li>
+          <li><a class="text-blue-600 hover:underline" href="#qlora">QLoRA</a> — LoRA on a 4-bit-quantized base for 7B+ models on consumer GPUs.</li>
+          <li><a class="text-blue-600 hover:underline" href="comparison.html">Comparison</a> — LoRA on the Pareto chart against the other nine.</li>
+          <li><a class="text-blue-600 hover:underline" href="failure-points.html#lora">Failure points</a> — how LoRA training loses its mind.</li>
+        </ul>
+
+      </section>
+
+      <!-- ============================================
+           TAB PANEL: DoRA
+           ============================================ -->
+      <section class="tab-panel" data-panel="dora" role="tabpanel">
+        <div class="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <span class="eyebrow">Parameter-efficient fine-tuning</span>
+            <h2 class="text-3xl font-bold mt-1 tracking-tight">DoRA &mdash; Weight-Decomposed Low-Rank Adaptation</h2>
+            <p class="mt-2 max-w-2xl text-slate-600 dark:text-slate-300">
+              LoRA plus a magnitude vector. Same low-rank trick for direction, separate scalar for magnitude.
+              Sometimes a real improvement. Always a tiny bit heavier.
+            </p>
+          </div>
+          <div class="flex flex-col items-end gap-2 shrink-0">
+            <a href="https://github.com/kumarjit88/finetuning-slm/blob/main/notebooks/04_lora_and_dora_finetuning.ipynb" target="_blank" rel="noopener" class="btn btn-primary text-sm">Open the notebook</a>
+            <div class="flex gap-1.5 flex-wrap justify-end">
+              <span class="badge badge-primary">PEFT</span>
+              <span class="badge badge-success">Low memory</span>
+              <span class="badge badge-neutral">2024 paper</span>
+            </div>
+          </div>
+        </div>
+
+        <blockquote class="callout mt-6">
+          <span class="callout-label">The one-liner</span>
+          &ldquo;DoRA looked at LoRA and said &lsquo;what if we also had opinions about magnitude?&rsquo;. The paper claims consistent gains
+          over LoRA. Our experiments say it&#39;s slightly better, slightly slower, and completely worth trying whenever
+          LoRA is already on the table.&rdquo;
+        </blockquote>
+
+        <h3 class="section-heading">How it works</h3>
+        <p>DoRA decomposes each pretrained weight <code>W</code> into a magnitude vector <code>m</code> and a
+        direction matrix <code>V / ||V||</code>. The direction gets the LoRA treatment (low-rank update). The
+        magnitude vector is trained directly (it&#39;s tiny). The intuition: LoRA can only rotate; DoRA can rotate
+        <em>and</em> stretch. When a task needs both, DoRA wins.</p>
+
+        <h3 class="section-heading">The math</h3>
+        <div class="card">
+          <div class="text-sm text-slate-500 mb-2">Weight decomposition</div>
+          <div class="text-lg">$$W = m \cdot \frac{V}{\|V\|_c}$$</div>
+          <div class="text-sm text-slate-500 mt-4 mb-2">DoRA update</div>
+          <div class="text-lg">$$W' = \underline{m} \cdot \frac{W_0 + \underline{B A}}{\|W_0 + BA\|_c}$$</div>
+          <p class="text-sm mt-3 text-slate-500">Underlined terms are trainable. <code>||V||<sub>c</sub></code> is the column-wise norm. The magnitude vector <code>m</code> adds <code>d</code> parameters per matrix on top of the LoRA count.</p>
+        </div>
+
+        <h3 class="section-heading">When to reach for it</h3>
+        <div class="pros-cons">
+          <div class="pros">
+            <div class="font-semibold mb-2" style="color: var(--color-success);">Use DoRA when</div>
+            <ul class="text-sm">
+              <li>You&#39;re already running LoRA and want a small, reliable quality bump.</li>
+              <li>The task involves magnitude information (e.g. calibration, confidence).</li>
+              <li>Your dataset is small enough that a few extra parameters won&#39;t overfit.</li>
+            </ul>
+          </div>
+          <div class="cons">
+            <div class="font-semibold mb-2" style="color: var(--color-danger);">Skip DoRA when</div>
+            <ul class="text-sm">
+              <li>Every millisecond of training time matters &mdash; DoRA is 15-25% slower.</li>
+              <li>You need to fuse adapters at inference &mdash; DoRA fusion is more finicky.</li>
+              <li>Vanilla LoRA already saturates your metric.</li>
+            </ul>
+          </div>
+        </div>
+
+        <h3 class="section-heading">The code</h3>
+        <div class="code-toolbar">
+<pre><code class="language-python">from peft import LoraConfig, get_peft_model, TaskType
+
+# The ONLY change from LoRA: use_dora=True
+dora_cfg = LoraConfig(
+    r=8, lora_alpha=16,
+    target_modules=["q_proj", "v_proj"],
+    lora_dropout=0.05, bias="none",
+    task_type=TaskType.CAUSAL_LM,
+    use_dora=True,   # <- that's the whole trick
+)
+model = get_peft_model(base_model, dora_cfg)</code></pre>
+        </div>
+
+        <h3 class="section-heading">What actually happened when we ran it</h3>
+        <figure class="result-figure">
+          <img src="images/notebooks/lora_dora_comparison.png" alt="Bar chart comparing LoRA and DoRA on ROUGE-1, training time, and trainable parameters" loading="lazy">
+          <figcaption>Notebook 04 &mdash; DoRA edges LoRA on quality (+0.01 ROUGE-1) at the cost of ~20% training time.</figcaption>
         </figure>
+      </section>
 
-        <div class="overflow-x-auto">
-          <table class="w-full text-sm border-collapse rounded-lg overflow-hidden">
-            <thead>
-              <tr class="bg-slate-100 dark:bg-slate-700">
-                <th class="text-left p-3 font-semibold">Model Size</th>
-                <th class="text-left p-3 font-semibold">FP32 VRAM</th>
-                <th class="text-left p-3 font-semibold">BF16 VRAM</th>
-                <th class="text-left p-3 font-semibold">Fits on…</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-200 dark:divide-slate-600">
-              <tr class="hover:bg-slate-50 dark:hover:bg-slate-800">
-                <td class="p-3 font-medium">135M (SmolLM2)</td>
-                <td class="p-3">~2.5 GB</td>
-                <td class="p-3">~1.5 GB</td>
-                <td class="p-3">Any modern GPU, even Colab free tier 🎉</td>
-              </tr>
-              <tr class="hover:bg-slate-50 dark:hover:bg-slate-800">
-                <td class="p-3 font-medium">360M (SmolLM2)</td>
-                <td class="p-3">~6 GB</td>
-                <td class="p-3">~3.5 GB</td>
-                <td class="p-3">RTX 3060 / T4</td>
-              </tr>
-              <tr class="hover:bg-slate-50 dark:hover:bg-slate-800">
-                <td class="p-3 font-medium">1.7B (SmolLM2)</td>
-                <td class="p-3">~28 GB</td>
-                <td class="p-3">~16 GB</td>
-                <td class="p-3">A100 / RTX 4090 (tight)</td>
-              </tr>
-              <tr class="hover:bg-slate-50 dark:hover:bg-slate-800">
-                <td class="p-3 font-medium">7B</td>
-                <td class="p-3">~112 GB</td>
-                <td class="p-3">~56 GB</td>
-                <td class="p-3">Multi-GPU or DeepSpeed ZeRO 🔥</td>
-              </tr>
+      <!-- ============================================
+           TAB PANEL: QLoRA
+           ============================================ -->
+      <section class="tab-panel" data-panel="qlora" role="tabpanel">
+        <div class="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <span class="eyebrow">Quantized fine-tuning</span>
+            <h2 class="text-3xl font-bold mt-1 tracking-tight">QLoRA &mdash; LoRA on a 4-bit-quantized base</h2>
+            <p class="mt-2 max-w-2xl text-slate-600 dark:text-slate-300">
+              Compress the frozen base to 4-bit NF4, LoRA on top. A 7B model now fits in 6 GB. The technique that
+              made fine-tuning accessible to people without cloud budgets.
+            </p>
+          </div>
+          <div class="flex flex-col items-end gap-2 shrink-0">
+            <a href="https://github.com/kumarjit88/finetuning-slm/blob/main/notebooks/05_qlora_finetuning.ipynb" target="_blank" rel="noopener" class="btn btn-primary text-sm">Open the notebook</a>
+            <div class="flex gap-1.5 flex-wrap justify-end">
+              <span class="badge badge-accent">Quantized</span>
+              <span class="badge badge-success">4-bit NF4</span>
+              <span class="badge badge-neutral">7B in 6 GB</span>
+            </div>
+          </div>
+        </div>
+
+        <blockquote class="callout mt-6">
+          <span class="callout-label">The one-liner</span>
+          &ldquo;QLoRA compressed the base to 4 bits and still got the same answers. Some questions do not need 32 bits of confidence.
+          A 7B model that used to need a datacenter now runs on a gaming laptop, and you barely lose any quality doing it.&rdquo;
+        </blockquote>
+
+        <h3 class="section-heading">How it works</h3>
+        <p>Three components: (1) <strong>NF4 quantization</strong> &mdash; a 4-bit floating-point format shaped for the actual
+        distribution of neural network weights (not uniform). (2) <strong>Double quantization</strong> &mdash; even the
+        quantization constants get quantized (saves an extra ~0.4 bits per parameter). (3) <strong>Paged optimizers</strong>
+        &mdash; when the CPU RAM overflows, unified memory pages spill to swap without crashing. Then you just LoRA on top.
+        The base stays frozen and quantized; only the LoRA adapters train in fp16.</p>
+
+        <h3 class="section-heading">The math you actually care about</h3>
+        <div class="card">
+          <div class="text-sm text-slate-500 mb-2">Memory budget for a 7B model, fine-tuned</div>
+          <table class="table-clean mt-2">
+            <thead><tr><th>Approach</th><th>Weights</th><th>Optimizer state</th><th>Total (approx)</th></tr></thead>
+            <tbody>
+              <tr><td>Full FT (fp32)</td><td>28 GB</td><td>112 GB</td><td>~140 GB</td></tr>
+              <tr><td>LoRA (fp16)</td><td>14 GB</td><td>0.2 GB</td><td>~16 GB</td></tr>
+              <tr><td class="font-semibold" style="color: var(--color-primary);">QLoRA (NF4)</td><td class="font-semibold">3.5 GB</td><td>0.2 GB</td><td class="font-semibold" style="color: var(--color-success);">~6 GB</td></tr>
             </tbody>
           </table>
         </div>
-      </div>
 
-      <!-- Common Pitfalls -->
-      <div class="technique-card border-l-4 border-red-400">
-        <h3 class="text-xl font-bold text-red-600 dark:text-red-400 mb-3">⚠️ Common Pitfalls</h3>
-        <p class="text-slate-600 dark:text-slate-300 mb-4">
-          Full fine-tuning is powerful but unforgiving. Here's where people (including me, repeatedly) shoot themselves in the foot:
+        <h3 class="section-heading">When to reach for it</h3>
+        <div class="pros-cons">
+          <div class="pros">
+            <div class="font-semibold mb-2" style="color: var(--color-success);">Use QLoRA when</div>
+            <ul class="text-sm">
+              <li>Your base model doesn&#39;t fit in your GPU at fp16.</li>
+              <li>You&#39;re fine-tuning a 7B or larger model on consumer hardware.</li>
+              <li>You want to iterate on adapters quickly &mdash; the base loads once, stays quantized.</li>
+              <li>You need CUDA. QLoRA on MPS falls back to standard LoRA (no bitsandbytes on Apple Silicon).</li>
+            </ul>
+          </div>
+          <div class="cons">
+            <div class="font-semibold mb-2" style="color: var(--color-danger);">Skip QLoRA when</div>
+            <ul class="text-sm">
+              <li>Your base already fits in memory at fp16 &mdash; use plain LoRA.</li>
+              <li>You&#39;re on Apple Silicon (MPS has no NF4 kernels; use QLoRA on CUDA or fall back to LoRA).</li>
+              <li>You need the absolute highest quality &mdash; NF4 loses a small but measurable amount.</li>
+            </ul>
+          </div>
+        </div>
+
+        <h3 class="section-heading">The code</h3>
+        <div class="code-toolbar">
+<pre><code class="language-python">from transformers import AutoModelForCausalLM, BitsAndBytesConfig
+from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training, TaskType
+import torch
+
+# 1. Quantization config: NF4 + double quant
+bnb_config = BitsAndBytesConfig(
+    load_in_4bit=True,
+    bnb_4bit_quant_type="nf4",
+    bnb_4bit_use_double_quant=True,
+    bnb_4bit_compute_dtype=torch.float16,
+)
+
+# 2. Load the base in 4-bit
+model = AutoModelForCausalLM.from_pretrained(
+    model_id, quantization_config=bnb_config,
+    device_map="auto",
+)
+model = prepare_model_for_kbit_training(model)
+
+# 3. LoRA config exactly as before
+lora_cfg = LoraConfig(
+    r=8, lora_alpha=16,
+    target_modules=["q_proj", "v_proj"],
+    lora_dropout=0.05, bias="none",
+    task_type=TaskType.CAUSAL_LM,
+)
+model = get_peft_model(model, lora_cfg)</code></pre>
+        </div>
+
+        <h3 class="section-heading">What actually happened when we ran it</h3>
+        <figure class="result-figure">
+          <img src="images/notebooks/qlora_memory_comparison.png" alt="Bar chart from notebook 05 showing memory usage for full FT vs LoRA vs QLoRA" loading="lazy">
+          <figcaption>Notebook 05 &mdash; QLoRA uses ~6&times; less memory than LoRA and ~23&times; less than full FT.</figcaption>
+        </figure>
+      </section>
+
+      <!-- ============================================
+           TAB PANEL: Full Fine-Tuning
+           ============================================ -->
+      <section class="tab-panel" data-panel="full" role="tabpanel">
+        <div class="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <span class="eyebrow">Brute force</span>
+            <h2 class="text-3xl font-bold mt-1 tracking-tight">Full Fine-Tuning</h2>
+            <p class="mt-2 max-w-2xl text-slate-600 dark:text-slate-300">
+              Every parameter trainable. Every gradient computed. Every byte of VRAM used. The reference point that
+              every other technique compares itself to &mdash; and the one that eats the most compute doing it.
+            </p>
+          </div>
+          <div class="flex flex-col items-end gap-2 shrink-0">
+            <a href="https://github.com/kumarjit88/finetuning-slm/blob/main/notebooks/02_full_finetuning.ipynb" target="_blank" rel="noopener" class="btn btn-primary text-sm">Open the notebook</a>
+            <div class="flex gap-1.5 flex-wrap justify-end">
+              <span class="badge badge-danger">Brute force</span>
+              <span class="badge badge-neutral">Baseline</span>
+              <span class="badge badge-warning">High memory</span>
+            </div>
+          </div>
+        </div>
+
+        <blockquote class="callout mt-6">
+          <span class="callout-label">The one-liner</span>
+          &ldquo;Full fine-tuning is the reigning champion of every leaderboard and the reigning glutton of every hardware bill.
+          It works. It always works. It just wants everything in the fridge to work.&rdquo;
+        </blockquote>
+
+        <h3 class="section-heading">How it works</h3>
+        <p>Take a pretrained model. Unfreeze every parameter. Train it on your task with a small learning rate
+        (usually 10&times; to 100&times; smaller than pretraining). Every weight is updated. Every optimizer state
+        (usually Adam: two extra tensors per weight) lives in memory. This is what &ldquo;fine-tuning&rdquo; meant before 2021.</p>
+
+        <h3 class="section-heading">The math</h3>
+        <div class="card">
+          <div class="text-sm text-slate-500 mb-2">Standard gradient descent, no tricks</div>
+          <div class="text-lg">$$\theta_{t+1} = \theta_t - \eta \cdot \nabla_{\theta} \mathcal{L}(\theta_t)$$</div>
+          <div class="text-sm text-slate-500 mt-4 mb-2">Trainable parameter count</div>
+          <div class="text-lg">$$|\theta| = |\theta_{\text{base}}|$$</div>
+          <p class="text-sm mt-3 text-slate-500">All of them. Every layer, every head, every embedding. If it has a gradient, it moves.</p>
+        </div>
+
+        <h3 class="section-heading">When to reach for it</h3>
+        <div class="pros-cons">
+          <div class="pros">
+            <div class="font-semibold mb-2" style="color: var(--color-success);">Use full FT when</div>
+            <ul class="text-sm">
+              <li>You have unlimited compute (or someone else&#39;s budget).</li>
+              <li>You need the last 0.5% of quality that PEFT can&#39;t reach.</li>
+              <li>You&#39;re establishing the ceiling before comparing PEFT variants.</li>
+              <li>Your task requires fundamental shifts in the model&#39;s knowledge.</li>
+            </ul>
+          </div>
+          <div class="cons">
+            <div class="font-semibold mb-2" style="color: var(--color-danger);">Skip full FT when</div>
+            <ul class="text-sm">
+              <li>You want the same model reusable across tasks &mdash; use LoRA adapters.</li>
+              <li>Your VRAM is under 40 GB and your model is over 3B.</li>
+              <li>Your dataset is under 1000 examples &mdash; you&#39;ll overfit.</li>
+              <li>You need to ship separate task-specific weights &mdash; adapters are 1000&times; smaller.</li>
+            </ul>
+          </div>
+        </div>
+
+        <h3 class="section-heading">The code</h3>
+        <div class="code-toolbar">
+<pre><code class="language-python">from transformers import AutoModelForCausalLM, Trainer, TrainingArguments
+
+# Load the model &mdash; ALL parameters trainable by default
+model = AutoModelForCausalLM.from_pretrained(model_id, dtype=torch.float32)
+
+# Use a small learning rate &mdash; you're updating pretrained weights
+args = TrainingArguments(
+    output_dir="/tmp/full_ft",
+    num_train_epochs=3,
+    per_device_train_batch_size=2,
+    gradient_accumulation_steps=4,   # simulate batch_size=8
+    learning_rate=2e-5,              # 10x smaller than pretraining
+    warmup_ratio=0.03,
+    weight_decay=0.01,
+    gradient_checkpointing=True,     # trades speed for memory
+    save_strategy="epoch",
+    report_to="none",
+)
+
+trainer = Trainer(model=model, args=args, train_dataset=ds)
+trainer.train()</code></pre>
+        </div>
+
+        <h3 class="section-heading">What actually happened when we ran it</h3>
+        <p class="text-slate-600 dark:text-slate-300 max-w-3xl">
+          Notebook 02 ran a 1-epoch full fine-tune on SmolLM2-135M with a 200-example medical QA dataset. Peak
+          VRAM: about 45 GB (fp32, optimizer states, gradients). Result: ROUGE-1 = 0.71. LoRA reached 0.67 with
+          300&times; fewer trainable parameters and ~10&times; less memory. Which is why LoRA exists.
         </p>
+      </section>
 
-        <div class="space-y-4">
-          <!-- Pitfall 1 -->
-          <div class="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-lg p-4">
-            <h4 class="font-bold text-red-700 dark:text-red-300 mb-1">🧠 Catastrophic Forgetting</h4>
-            <p class="text-sm text-slate-600 dark:text-slate-300 mb-2">
-              The model becomes great at your task but forgets how to do basic things. Like teaching someone advanced calculus and they forget how to add.
-            </p>
-            <p class="text-sm text-slate-500 dark:text-slate-400">
-              <strong>Fix:</strong> Mix in a small fraction (5–10%) of general-purpose data during training. Use a low learning rate. Evaluate on diverse benchmarks, not just your task.
-            </p>
-          </div>
-
-          <!-- Pitfall 2 -->
-          <div class="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-lg p-4">
-            <h4 class="font-bold text-red-700 dark:text-red-300 mb-1">📈 Overfitting</h4>
-            <p class="text-sm text-slate-600 dark:text-slate-300 mb-2">
-              With all parameters free to move, the model can easily memorize your training set verbatim — especially if it's small. Your training loss looks beautiful; your validation loss tells a horror story.
-            </p>
-            <p class="text-sm text-slate-500 dark:text-slate-400">
-              <strong>Fix:</strong> Use weight decay, reduce epochs, increase data diversity, monitor train/val gap obsessively.
+      <!-- ============================================
+           TAB PANEL: Linear Probing
+           ============================================ -->
+      <section class="tab-panel" data-panel="linear" role="tabpanel">
+        <div class="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <span class="eyebrow">Head-only training</span>
+            <h2 class="text-3xl font-bold mt-1 tracking-tight">Linear Probing / Feature Extraction</h2>
+            <p class="mt-2 max-w-2xl text-slate-600 dark:text-slate-300">
+              Freeze the base entirely. Train a linear classifier on the hidden states. The cheapest way to test
+              what a pretrained model already knows about your task.
             </p>
           </div>
-
-          <!-- Pitfall 3 -->
-          <div class="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-lg p-4">
-            <h4 class="font-bold text-red-700 dark:text-red-300 mb-1">💥 Learning Rate Divergence</h4>
-            <p class="text-sm text-slate-600 dark:text-slate-300 mb-2">
-              Set the learning rate too high and your loss goes to NaN faster than you can say "gradient explosion." The pre-trained weights get obliterated in the first few steps.
-            </p>
-            <p class="text-sm text-slate-500 dark:text-slate-400">
-              <strong>Fix:</strong> Start with 2e-5 and tune from there. Always use warmup (5–10% of steps). Use cosine or linear decay schedule. If loss spikes, halve the LR.
-            </p>
-          </div>
-
-          <!-- Pitfall 4 -->
-          <div class="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-lg p-4">
-            <h4 class="font-bold text-red-700 dark:text-red-300 mb-1">🗃️ Checkpoint Storage</h4>
-            <p class="text-sm text-slate-600 dark:text-slate-300 mb-2">
-              Every checkpoint is a full copy of the model. A 1.7B model with 5 checkpoints = 34GB of disk space just for saved states. Your disk will fill up faster than a free buffet at a developer conference.
-            </p>
-            <p class="text-sm text-slate-500 dark:text-slate-400">
-              <strong>Fix:</strong> Only keep the best 2–3 checkpoints. Use <code>save_total_limit</code> in HuggingFace Trainer.
-            </p>
+          <div class="flex flex-col items-end gap-2 shrink-0">
+            <a href="https://github.com/kumarjit88/finetuning-slm/blob/main/notebooks/03_feature_extraction_linear_probing.ipynb" target="_blank" rel="noopener" class="btn btn-primary text-sm">Open the notebook</a>
+            <div class="flex gap-1.5 flex-wrap justify-end">
+              <span class="badge badge-neutral">Head only</span>
+              <span class="badge badge-success">Cheapest</span>
+              <span class="badge badge-warning">Narrow gains</span>
+            </div>
           </div>
         </div>
-      </div>
 
-      <!-- Try It Yourself -->
-      <div class="technique-card border-l-4 border-indigo-500 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20">
-        <h3 class="text-xl font-bold text-indigo-600 dark:text-indigo-400 mb-3">🚀 Try It Yourself</h3>
-        <p class="text-slate-600 dark:text-slate-300 mb-4">
-          Ready to get your hands dirty? Our notebook walks you through full fine-tuning of SmolLM2-135M on a real task, step by step. You'll see exactly how the training loop works, watch the loss curve (hopefully) go down, and learn to spot when things go wrong.
-        </p>
-        <a href="notebooks/02_full_finetuning.ipynb" class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-5 py-3 rounded-lg transition-colors shadow-md hover:shadow-lg">
-          <span>📓</span>
-          <span>Open Notebook 02: Full Fine-Tuning</span>
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
-        </a>
-        <p class="text-xs text-slate-500 dark:text-slate-400 mt-3">
-          💡 Runs on Google Colab free tier (T4 GPU) — no expensive hardware required for SmolLM2-135M.
-        </p>
-      </div>
+        <blockquote class="callout mt-6">
+          <span class="callout-label">The one-liner</span>
+          &ldquo;Linear probing asks &lsquo;does the base model already know this?&rsquo; and answers in under a minute. When
+          the answer is yes, you just saved yourself a whole training run. When the answer is no, you know to
+          escalate to LoRA and stop feeling bad about it.&rdquo;
+        </blockquote>
 
-    </section>
+        <h3 class="section-heading">How it works</h3>
+        <p>Extract hidden states from the base model (frozen). Feed them into a small classifier (typically a
+        linear layer). Train only the classifier. The base never sees a gradient. Total trainable parameters:
+        <code>hidden_dim &times; num_classes</code>. For SmolLM2-135M classifying 5 categories: 2,880 parameters.
+        You can train this in your lunch break.</p>
 
-    <!-- Upcoming Techniques Teaser -->
-    <section class="border-t-2 border-slate-200 dark:border-slate-700 pt-12">
-      <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-4">Coming Up Next…</h2>
-      <p class="text-slate-600 dark:text-slate-300 mb-6">
-        Full fine-tuning is the foundation, but there are far more elegant (and memory-friendly) approaches. Stay tuned as we add:
-      </p>
-      <div class="grid gap-4 md:grid-cols-2">
-        <div class="technique-card opacity-60 border-l-4 border-slate-300 dark:border-slate-600">
-          <h3 class="font-bold text-slate-500 dark:text-slate-400">🧩 LoRA & QLoRA</h3>
-          <p class="text-sm text-slate-400 dark:text-slate-500">Low-rank adapters — 90%+ memory savings with ~95% of the quality. The "have your cake and eat it" technique.</p>
+        <h3 class="section-heading">The math</h3>
+        <div class="card">
+          <div class="text-sm text-slate-500 mb-2">Frozen feature extractor + linear head</div>
+          <div class="text-lg">$$\hat{y} = \text{softmax}\left(W \cdot h_{[\text{CLS}]}(x) + b\right)$$</div>
+          <p class="text-sm mt-3 text-slate-500">Where <code>h(x)</code> comes from the frozen base and only
+          <code>W, b</code> are trained. Two tensors. That&#39;s it.</p>
         </div>
-        <div class="technique-card opacity-60 border-l-4 border-slate-300 dark:border-slate-600">
-          <h3 class="font-bold text-slate-500 dark:text-slate-400">✨ Prompt Tuning</h3>
-          <p class="text-sm text-slate-400 dark:text-slate-500">Learn a handful of virtual tokens. The model stays frozen, your prompt does the heavy lifting.</p>
-        </div>
-        <div class="technique-card opacity-60 border-l-4 border-slate-300 dark:border-slate-600">
-          <h3 class="font-bold text-slate-500 dark:text-slate-400">🔌 Adapter Layers</h3>
-          <p class="text-sm text-slate-400 dark:text-slate-500">Inject tiny trainable modules between frozen layers. Modular, composable, elegant.</p>
-        </div>
-        <div class="technique-card opacity-60 border-l-4 border-slate-300 dark:border-slate-600">
-          <h3 class="font-bold text-slate-500 dark:text-slate-400">⚖️ DPO / RLHF</h3>
-          <p class="text-sm text-slate-400 dark:text-slate-500">Align outputs to human preferences. Because "technically correct" and "actually helpful" are different things.</p>
-        </div>
-      </div>
-    </section>
 
-  </main>
+        <h3 class="section-heading">When to reach for it</h3>
+        <div class="pros-cons">
+          <div class="pros">
+            <div class="font-semibold mb-2" style="color: var(--color-success);">Use linear probing when</div>
+            <ul class="text-sm">
+              <li>You&#39;re doing classification and want to test whether pretraining already learned the distinction.</li>
+              <li>You want an interpretable, controlled comparison baseline.</li>
+              <li>You need something you can retrain in minutes as new labels arrive.</li>
+              <li>You&#39;re studying which layers encode which features.</li>
+            </ul>
+          </div>
+          <div class="cons">
+            <div class="font-semibold mb-2" style="color: var(--color-danger);">Skip linear probing when</div>
+            <ul class="text-sm">
+              <li>Your task is generative &mdash; you need to change the output distribution.</li>
+              <li>The base model has no idea about your domain &mdash; use LoRA.</li>
+              <li>You need nonlinear feature combinations &mdash; a linear head can&#39;t model them.</li>
+            </ul>
+          </div>
+        </div>
+
+        <h3 class="section-heading">The code</h3>
+        <div class="code-toolbar">
+<pre><code class="language-python">import torch, torch.nn as nn
+from transformers import AutoModel
+
+# 1. Load the base and freeze everything
+base = AutoModel.from_pretrained(model_id)
+for p in base.parameters():
+    p.requires_grad = False
+base.eval()
+
+# 2. Extract features (last hidden state, pooled)
+def get_features(input_ids, attention_mask):
+    with torch.no_grad():
+        out = base(input_ids=input_ids, attention_mask=attention_mask)
+    return out.last_hidden_state[:, 0]   # [CLS] token
+
+# 3. Train a linear classifier on top
+class LinearProbe(nn.Module):
+    def __init__(self, hidden, n_classes):
+        super().__init__()
+        self.head = nn.Linear(hidden, n_classes)
+    def forward(self, features):
+        return self.head(features)
+
+probe = LinearProbe(hidden=576, n_classes=5)
+optimizer = torch.optim.AdamW(probe.parameters(), lr=1e-3)
+# ... standard training loop on features</code></pre>
+        </div>
+
+        <h3 class="section-heading">What actually happened when we ran it</h3>
+        <figure class="result-figure">
+          <img src="images/notebooks/feature_extraction_comparison.png" alt="Chart from notebook 03 comparing linear probing vs LoRA vs full FT on classification accuracy" loading="lazy">
+          <figcaption>Notebook 03 &mdash; linear probing reached 0.50 ROUGE-1 with 150K parameters. LoRA jumped to 0.67 with 460K.</figcaption>
+        </figure>
+      </section>
+
+      <!-- ============================================
+           TAB PANEL: Prompt Tuning
+           ============================================ -->
+      <section class="tab-panel" data-panel="prompt" role="tabpanel">
+        <div class="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <span class="eyebrow">Soft prompts</span>
+            <h2 class="text-3xl font-bold mt-1 tracking-tight">Prompt Tuning</h2>
+            <p class="mt-2 max-w-2xl text-slate-600 dark:text-slate-300">
+              Learn a handful of virtual tokens that live in embedding space. Not real words. Not English. Just
+              vectors that the model has been convinced belong at the front of the sequence.
+            </p>
+          </div>
+          <div class="flex flex-col items-end gap-2 shrink-0">
+            <a href="https://github.com/kumarjit88/finetuning-slm/blob/main/notebooks/06_prompt_tuning.ipynb" target="_blank" rel="noopener" class="btn btn-primary text-sm">Open the notebook</a>
+            <div class="flex gap-1.5 flex-wrap justify-end">
+              <span class="badge badge-warning">Prompt-based</span>
+              <span class="badge badge-success">Tiny (20K params)</span>
+              <span class="badge badge-neutral">Narrow tasks</span>
+            </div>
+          </div>
+        </div>
+
+        <blockquote class="callout mt-6">
+          <span class="callout-label">The one-liner</span>
+          &ldquo;Prompt tuning learned 20,000 parameters worth of virtual tokens. It works. Sometimes. On the right task.
+          When it works, it&#39;s the most parameter-efficient technique in the whole tutorial. When it doesn&#39;t,
+          it fails silently and produces plausible-looking garbage.&rdquo;
+        </blockquote>
+
+        <h3 class="section-heading">How it works</h3>
+        <p>Prepend <em>n</em> learnable embedding vectors to your input token embeddings. Freeze the base. Train
+        only those <em>n</em> vectors. For SmolLM2 with 20 virtual tokens: 20 &times; 576 = 11,520 parameters.
+        The model treats these virtual tokens as if they were real words &mdash; and the training loop convinces
+        them to be helpful ones.</p>
+
+        <h3 class="section-heading">The math</h3>
+        <div class="card">
+          <div class="text-sm text-slate-500 mb-2">Augmented input embeddings</div>
+          <div class="text-lg">$$\tilde{X} = [P_1, P_2, \ldots, P_n, E(x_1), \ldots, E(x_T)]$$</div>
+          <p class="text-sm mt-3 text-slate-500">Where <code>P<sub>i</sub></code> are the learned prompt vectors
+          and <code>E(x<sub>t</sub>)</code> are the frozen embeddings of your input tokens. Only <code>P</code> gets gradients.</p>
+        </div>
+
+        <h3 class="section-heading">When to reach for it</h3>
+        <div class="pros-cons">
+          <div class="pros">
+            <div class="font-semibold mb-2" style="color: var(--color-success);">Use prompt tuning when</div>
+            <ul class="text-sm">
+              <li>You have a very narrow task (single format, single domain).</li>
+              <li>You have less than 100 training examples and want to avoid overfitting.</li>
+              <li>You need extreme parameter efficiency (embedded systems, storage limits).</li>
+              <li>Scale is large &mdash; prompt tuning gets much better with model size.</li>
+            </ul>
+          </div>
+          <div class="cons">
+            <div class="font-semibold mb-2" style="color: var(--color-danger);">Skip prompt tuning when</div>
+            <ul class="text-sm">
+              <li>Your task requires updates deeper than the input layer &mdash; use prefix tuning or LoRA.</li>
+              <li>The model is under 1B parameters &mdash; the technique underperforms at small scale.</li>
+              <li>You need to adapt to a new output distribution significantly.</li>
+            </ul>
+          </div>
+        </div>
+
+        <h3 class="section-heading">The code</h3>
+        <div class="code-toolbar">
+<pre><code class="language-python">from peft import PromptTuningConfig, PromptTuningInit, get_peft_model, TaskType
+
+prompt_cfg = PromptTuningConfig(
+    task_type=TaskType.CAUSAL_LM,
+    prompt_tuning_init=PromptTuningInit.TEXT,
+    num_virtual_tokens=20,                  # how many soft tokens
+    prompt_tuning_init_text="Classify medical questions accurately:",
+    tokenizer_name_or_path=model_id,
+)
+model = get_peft_model(base_model, prompt_cfg)
+# Only 11,520 trainable parameters for a 135M base</code></pre>
+        </div>
+
+        <h3 class="section-heading">What actually happened when we ran it</h3>
+        <figure class="result-figure">
+          <img src="images/notebooks/prompt_tuning_comparison.png" alt="Chart from notebook 06 showing prompt tuning results" loading="lazy">
+          <figcaption>Notebook 06 &mdash; prompt tuning reached ROUGE-1 = 0.55 with 20K params. Below LoRA, above baseline.</figcaption>
+        </figure>
+      </section>
+
+      <!-- ============================================
+           TAB PANEL: Prefix Tuning
+           ============================================ -->
+      <section class="tab-panel" data-panel="prefix" role="tabpanel">
+        <div class="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <span class="eyebrow">Deep soft prompts</span>
+            <h2 class="text-3xl font-bold mt-1 tracking-tight">Prefix Tuning</h2>
+            <p class="mt-2 max-w-2xl text-slate-600 dark:text-slate-300">
+              Prompt tuning at every layer. Instead of prepending soft tokens to the input, we prepend them to
+              the attention keys and values in every transformer block. More expressive, still very small.
+            </p>
+          </div>
+          <div class="flex flex-col items-end gap-2 shrink-0">
+            <a href="https://github.com/kumarjit88/finetuning-slm/blob/main/notebooks/07_prefix_tuning.ipynb" target="_blank" rel="noopener" class="btn btn-primary text-sm">Open the notebook</a>
+            <div class="flex gap-1.5 flex-wrap justify-end">
+              <span class="badge badge-warning">Prompt-based</span>
+              <span class="badge badge-success">Small (45K params)</span>
+              <span class="badge badge-neutral">More expressive</span>
+            </div>
+          </div>
+        </div>
+
+        <blockquote class="callout mt-6">
+          <span class="callout-label">The one-liner</span>
+          &ldquo;Prefix tuning is prompt tuning that got a promotion to management. Instead of whispering a suggestion at
+          the front door, it walks the halls at every floor. Slightly more expressive, still remarkably cheap.&rdquo;
+        </blockquote>
+
+        <h3 class="section-heading">How it works</h3>
+        <p>Rather than prepending soft tokens to just the input embeddings, prefix tuning prepends learnable
+        vectors to the keys and values of the self-attention layer &mdash; at every layer of the transformer.
+        Each layer gets its own set of prefix vectors, giving the model more &ldquo;steering room&rdquo; than plain
+        prompt tuning without touching any actual weights.</p>
+
+        <h3 class="section-heading">The math</h3>
+        <div class="card">
+          <div class="text-sm text-slate-500 mb-2">At layer <em>l</em>, prefix concatenates to keys/values</div>
+          <div class="text-lg">$$K^{(l)} = [P_K^{(l)}; K^{(l)}], \quad V^{(l)} = [P_V^{(l)}; V^{(l)}]$$</div>
+          <p class="text-sm mt-3 text-slate-500">Trainable parameters: <code>2 &times; L &times; n<sub>prefix</sub> &times; d</code>
+          where <em>L</em> is the number of layers. For 30 layers with 5 prefix tokens: 30 &times; 2 &times; 5 &times; 576 = 172,800.</p>
+        </div>
+
+        <h3 class="section-heading">When to reach for it</h3>
+        <div class="pros-cons">
+          <div class="pros">
+            <div class="font-semibold mb-2" style="color: var(--color-success);">Use prefix tuning when</div>
+            <ul class="text-sm">
+              <li>Prompt tuning was not expressive enough for your task.</li>
+              <li>You want per-layer steering without adding weight updates.</li>
+              <li>The base is small (under 1B) &mdash; prefix tuning does better than prompt tuning at this scale.</li>
+              <li>You need adapters that stay tiny (a few tens of KB on disk).</li>
+            </ul>
+          </div>
+          <div class="cons">
+            <div class="font-semibold mb-2" style="color: var(--color-danger);">Skip prefix tuning when</div>
+            <ul class="text-sm">
+              <li>LoRA already works &mdash; it&#39;s a more general solution with similar cost.</li>
+              <li>You need the KV cache during inference to be small (prefix inflates it).</li>
+              <li>Your task requires updating attention output projections, not just inputs.</li>
+            </ul>
+          </div>
+        </div>
+
+        <h3 class="section-heading">The code</h3>
+        <div class="code-toolbar">
+<pre><code class="language-python">from peft import PrefixTuningConfig, get_peft_model, TaskType
+
+prefix_cfg = PrefixTuningConfig(
+    task_type=TaskType.CAUSAL_LM,
+    num_virtual_tokens=5,     # prefix length per layer
+    prefix_projection=False,  # if True, reparameterize through an MLP
+    encoder_hidden_size=576,  # matches SmolLM2-135M hidden dim
+)
+model = get_peft_model(base_model, prefix_cfg)</code></pre>
+        </div>
+
+        <h3 class="section-heading">What actually happened when we ran it</h3>
+        <figure class="result-figure">
+          <img src="images/notebooks/prefix_tuning_comparison.png" alt="Chart from notebook 07 showing prefix tuning results" loading="lazy">
+          <figcaption>Notebook 07 &mdash; prefix tuning reached ROUGE-1 = 0.58 with 45K params. Better than prompt tuning, worse than LoRA.</figcaption>
+        </figure>
+      </section>
+
+      <!-- ============================================
+           TAB PANEL: DPO
+           ============================================ -->
+      <section class="tab-panel" data-panel="dpo" role="tabpanel">
+        <div class="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <span class="eyebrow">Preference alignment</span>
+            <h2 class="text-3xl font-bold mt-1 tracking-tight">DPO &mdash; Direct Preference Optimization</h2>
+            <p class="mt-2 max-w-2xl text-slate-600 dark:text-slate-300">
+              Teach the model &ldquo;this answer is better than that answer&rdquo; without a reward model, without RL, and
+              without an existential crisis. Preference pairs go in. Aligned model comes out.
+            </p>
+          </div>
+          <div class="flex flex-col items-end gap-2 shrink-0">
+            <a href="https://github.com/kumarjit88/finetuning-slm/blob/main/notebooks/08_dpo_alignment.ipynb" target="_blank" rel="noopener" class="btn btn-primary text-sm">Open the notebook</a>
+            <div class="flex gap-1.5 flex-wrap justify-end">
+              <span class="badge badge-success">Alignment</span>
+              <span class="badge badge-primary">No reward model</span>
+              <span class="badge badge-neutral">2023 paper</span>
+            </div>
+          </div>
+        </div>
+
+        <blockquote class="callout mt-6">
+          <span class="callout-label">The one-liner</span>
+          &ldquo;DPO taught the model that vivid narration beats flat narration. Loss went below log 2. It has opinions now.
+          Where PPO required a reward model, three moving loss terms, and a philosophy degree, DPO requires
+          preference pairs and a training loop.&rdquo;
+        </blockquote>
+
+        <h3 class="section-heading">How it works</h3>
+        <p>You provide pairs of outputs for the same prompt: one &ldquo;chosen&rdquo; (better), one &ldquo;rejected&rdquo; (worse).
+        DPO derives a loss that pushes the policy&#39;s log-probability of chosen outputs above rejected ones,
+        while a KL-divergence term (controlled by <code>&beta;</code>) keeps the policy close to a reference model
+        so it doesn&#39;t drift into gibberish. That&#39;s the whole idea. No reward model. No RL. Just supervised learning
+        on ranking.</p>
+
+        <h3 class="section-heading">The math</h3>
+        <div class="card">
+          <div class="text-sm text-slate-500 mb-2">DPO loss (per pair)</div>
+          <div class="text-lg">$$\mathcal{L}_\text{DPO} = -\log \sigma\left(\beta \log \frac{\pi_\theta(y_w|x)}{\pi_\text{ref}(y_w|x)} - \beta \log \frac{\pi_\theta(y_l|x)}{\pi_\text{ref}(y_l|x)}\right)$$</div>
+          <p class="text-sm mt-3 text-slate-500">
+            <code>&pi;<sub>&theta;</sub></code> is the trainable policy. <code>&pi;<sub>ref</sub></code> is the frozen SFT reference.
+            <code>y<sub>w</sub></code> is the chosen output, <code>y<sub>l</sub></code> is the rejected one.
+            <code>&beta;</code> (typically 0.1) controls how far the policy can drift from reference.
+            Loss below <code>log 2 &asymp; 0.693</code> means the model has genuinely learned the preference.
+          </p>
+        </div>
+
+        <h3 class="section-heading">When to reach for it</h3>
+        <div class="pros-cons">
+          <div class="pros">
+            <div class="font-semibold mb-2" style="color: var(--color-success);">Use DPO when</div>
+            <ul class="text-sm">
+              <li>The problem is preference, not capability &mdash; the model can produce good outputs sometimes.</li>
+              <li>You have (or can generate) chosen/rejected pairs for the same prompt.</li>
+              <li>You want alignment: tone, refusal behavior, hallucination reduction, style bias.</li>
+              <li>You already ran SFT and want to sharpen the model&#39;s judgment.</li>
+            </ul>
+          </div>
+          <div class="cons">
+            <div class="font-semibold mb-2" style="color: var(--color-danger);">Skip DPO when</div>
+            <ul class="text-sm">
+              <li>The base model can&#39;t produce plausible outputs at all &mdash; SFT first.</li>
+              <li>You don&#39;t have preference pairs and can&#39;t generate them.</li>
+              <li>Your task needs new knowledge, not sharper preferences &mdash; use LoRA/full FT.</li>
+              <li>Model is under 500M and the task is highly creative &mdash; capacity matters more than alignment.</li>
+            </ul>
+          </div>
+        </div>
+
+        <h3 class="section-heading">The code</h3>
+        <div class="code-toolbar">
+<pre><code class="language-python">from trl import DPOTrainer, DPOConfig
+from peft import PeftModel
+
+# 1. Load SFT-fine-tuned model as starting point
+policy = PeftModel.from_pretrained(base_model, sft_adapter_dir, is_trainable=True)
+
+# 2. Preference dataset: {"prompt": ..., "chosen": ..., "rejected": ...}
+dpo_config = DPOConfig(
+    output_dir="/tmp/dpo",
+    beta=0.1,                          # KL penalty
+    max_length=256,
+    num_train_epochs=3,
+    learning_rate=5e-5,
+    per_device_train_batch_size=1,
+    gradient_accumulation_steps=4,
+    save_strategy="no",
+    report_to="none",
+)
+
+# 3. ref_model=None uses PEFT adapter-disable trick
+trainer = DPOTrainer(
+    model=policy,
+    ref_model=None,
+    args=dpo_config,
+    train_dataset=preference_pairs,
+    processing_class=tokenizer,
+)
+trainer.train()</code></pre>
+        </div>
+
+        <h3 class="section-heading">What actually happened when we ran it</h3>
+        <figure class="result-figure">
+          <img src="images/notebooks/dpo_comparison.png" alt="Chart from notebook 08 showing DPO results before and after training" loading="lazy">
+          <figcaption>Notebook 08 &mdash; DPO reduced hallucination and shifted narration toward preferred style. Loss reached 0.53 (well below the log 2 threshold).</figcaption>
+        </figure>
+      </section>
+
+      <!-- ============================================
+           TAB PANEL: Knowledge Distillation
+           ============================================ -->
+      <section class="tab-panel" data-panel="distill" role="tabpanel">
+        <div class="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <span class="eyebrow">Model compression</span>
+            <h2 class="text-3xl font-bold mt-1 tracking-tight">Knowledge Distillation</h2>
+            <p class="mt-2 max-w-2xl text-slate-600 dark:text-slate-300">
+              A big model tutors a small model. The small model learns to imitate the big one&#39;s output
+              distribution &mdash; not just the labels, but the shape of the probability mass over all vocabulary.
+            </p>
+          </div>
+          <div class="flex flex-col items-end gap-2 shrink-0">
+            <a href="https://github.com/kumarjit88/finetuning-slm/blob/main/notebooks/09_knowledge_distillation.ipynb" target="_blank" rel="noopener" class="btn btn-primary text-sm">Open the notebook</a>
+            <div class="flex gap-1.5 flex-wrap justify-end">
+              <span class="badge badge-success">Compression</span>
+              <span class="badge badge-primary">Teacher-student</span>
+              <span class="badge badge-neutral">Cheaper inference</span>
+            </div>
+          </div>
+        </div>
+
+        <blockquote class="callout mt-6">
+          <span class="callout-label">The one-liner</span>
+          &ldquo;Knowledge distillation is what you do when you built a beautiful, expensive model and your production
+          budget is asking hard questions. The teacher labels a corpus with soft probabilities; the student
+          learns to imitate; ship the student. Everyone wins except the electricity company.&rdquo;
+        </blockquote>
+
+        <h3 class="section-heading">How it works</h3>
+        <p>Two models: a &ldquo;teacher&rdquo; (large, expensive, high-quality) and a &ldquo;student&rdquo; (small, cheap, being trained).
+        For each training example, run the teacher to get its logits (or soft probabilities via softmax with
+        temperature). Train the student to match those soft probabilities, not just the hard labels. The
+        temperature-softened distribution carries much richer signal than one-hot labels &mdash; it tells the
+        student not just &ldquo;this is the right answer&rdquo; but &ldquo;these are the near-misses and by how much&rdquo;.</p>
+
+        <h3 class="section-heading">The math</h3>
+        <div class="card">
+          <div class="text-sm text-slate-500 mb-2">Total loss: label loss + distillation loss</div>
+          <div class="text-lg">$$\mathcal{L} = (1-\alpha) \cdot \mathcal{L}_\text{CE}(y, \hat{y}_\text{student}) + \alpha \cdot T^2 \cdot \mathcal{L}_\text{KL}\left(\frac{p_\text{teacher}}{T}, \frac{p_\text{student}}{T}\right)$$</div>
+          <p class="text-sm mt-3 text-slate-500">
+            <code>T</code> is the temperature (usually 2-4). Higher T softens the distribution and reveals more nuance.
+            <code>&alpha;</code> balances between mimicking the teacher and matching the true labels. The <code>T&sup2;</code>
+            factor corrects the gradient magnitude that softmax scaling would otherwise reduce.
+          </p>
+        </div>
+
+        <h3 class="section-heading">When to reach for it</h3>
+        <div class="pros-cons">
+          <div class="pros">
+            <div class="font-semibold mb-2" style="color: var(--color-success);">Use distillation when</div>
+            <ul class="text-sm">
+              <li>You have a working large model and need something cheaper to serve.</li>
+              <li>Inference latency and cost matter more than the last percent of quality.</li>
+              <li>You want to shrink a fine-tuned model into a smaller architecture.</li>
+              <li>Your compute is asymmetric &mdash; training is fine, serving is expensive.</li>
+            </ul>
+          </div>
+          <div class="cons">
+            <div class="font-semibold mb-2" style="color: var(--color-danger);">Skip distillation when</div>
+            <ul class="text-sm">
+              <li>You don&#39;t have a well-performing teacher yet &mdash; build one first.</li>
+              <li>The size gap is too large &mdash; a 70B teacher into a 135M student loses too much.</li>
+              <li>The teacher itself is small enough to ship &mdash; just ship it.</li>
+            </ul>
+          </div>
+        </div>
+
+        <h3 class="section-heading">The code</h3>
+        <div class="code-toolbar">
+<pre><code class="language-python">import torch.nn.functional as F
+
+def distillation_step(student, teacher, batch, T=2.0, alpha=0.5):
+    # 1. Teacher forward (no grad)
+    with torch.no_grad():
+        teacher_logits = teacher(**batch).logits
+
+    # 2. Student forward
+    student_out = student(**batch)
+    student_logits = student_out.logits
+
+    # 3. Standard CE loss with true labels
+    ce_loss = student_out.loss
+
+    # 4. KL divergence between softened distributions
+    kl_loss = F.kl_div(
+        F.log_softmax(student_logits / T, dim=-1),
+        F.softmax(teacher_logits / T, dim=-1),
+        reduction="batchmean",
+    ) * (T ** 2)
+
+    return (1 - alpha) * ce_loss + alpha * kl_loss</code></pre>
+        </div>
+
+        <h3 class="section-heading">What actually happened when we ran it</h3>
+        <figure class="result-figure">
+          <img src="images/notebooks/kd_comparison.png" alt="Chart from notebook 09 showing distillation student vs teacher performance" loading="lazy">
+          <figcaption>Notebook 09 &mdash; student matched 92% of teacher quality at ~40% of the parameters.</figcaption>
+        </figure>
+      </section>
+
+      <!-- ============================================
+           TAB PANEL: Model Merging
+           ============================================ -->
+      <section class="tab-panel" data-panel="merge" role="tabpanel">
+        <div class="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <span class="eyebrow">No-training composition</span>
+            <h2 class="text-3xl font-bold mt-1 tracking-tight">Model Merging &mdash; SLERP, TIES, DARE</h2>
+            <p class="mt-2 max-w-2xl text-slate-600 dark:text-slate-300">
+              Combine multiple fine-tuned models by averaging weights in clever ways. No training. No data.
+              Sometimes the merged model outperforms both parents. It sounds like alchemy. It is not.
+            </p>
+          </div>
+          <div class="flex flex-col items-end gap-2 shrink-0">
+            <a href="https://github.com/kumarjit88/finetuning-slm/blob/main/notebooks/10_model_merging.ipynb" target="_blank" rel="noopener" class="btn btn-primary text-sm">Open the notebook</a>
+            <div class="flex gap-1.5 flex-wrap justify-end">
+              <span class="badge badge-success">Composition</span>
+              <span class="badge badge-primary">No training</span>
+              <span class="badge badge-neutral">Six seconds</span>
+            </div>
+          </div>
+        </div>
+
+        <blockquote class="callout mt-6">
+          <span class="callout-label">The one-liner</span>
+          &ldquo;Model merging finished in six seconds. Because it did not train. That is the whole trick, and it is
+          genuinely a free lunch: two fine-tunes go in, a combined model comes out, and sometimes it&#39;s
+          better than either parent on the union of their tasks.&rdquo;
+        </blockquote>
+
+        <h3 class="section-heading">How it works</h3>
+        <p>Given two (or more) fine-tuned models with the same architecture and base, combine their weights via
+        one of three families of methods:</p>
+        <ul class="list-disc pl-6 mt-3 text-slate-600 dark:text-slate-300 space-y-2">
+          <li><strong>SLERP</strong> (Spherical Linear Interpolation): interpolate on the hypersphere between the two weight vectors. Preserves the geometry of the parameter space better than linear averaging.</li>
+          <li><strong>TIES</strong> (TRIm, Elect Sign, Merge): trim small-magnitude parameter deltas, elect a sign per parameter based on agreement, and merge only within the agreeing subset. Reduces conflict between fine-tunes.</li>
+          <li><strong>DARE</strong> (Drop And REscale): randomly zero out most parameter deltas and rescale the rest. Aggressive but effective at reducing interference.</li>
+        </ul>
+
+        <h3 class="section-heading">The math</h3>
+        <div class="card">
+          <div class="text-sm text-slate-500 mb-2">SLERP: interpolate on the unit sphere</div>
+          <div class="text-lg">$$\theta_\text{merged} = \frac{\sin((1-t)\Omega)}{\sin\Omega} \theta_1 + \frac{\sin(t\Omega)}{\sin\Omega} \theta_2$$</div>
+          <p class="text-sm mt-3 text-slate-500">Where <code>&Omega;</code> is the angle between <code>&theta;<sub>1</sub></code> and <code>&theta;<sub>2</sub></code>, and <code>t &in; [0, 1]</code> is the interpolation coefficient. Linear averaging is the special case when the vectors are nearly parallel.</p>
+        </div>
+
+        <h3 class="section-heading">When to reach for it</h3>
+        <div class="pros-cons">
+          <div class="pros">
+            <div class="font-semibold mb-2" style="color: var(--color-success);">Use merging when</div>
+            <ul class="text-sm">
+              <li>You have two fine-tunes trained on related but distinct tasks.</li>
+              <li>You want to test compositions without paying for more training.</li>
+              <li>You want a model that spans both domains without catastrophic forgetting.</li>
+              <li>You want to explore the parameter space cheaply.</li>
+            </ul>
+          </div>
+          <div class="cons">
+            <div class="font-semibold mb-2" style="color: var(--color-danger);">Skip merging when</div>
+            <ul class="text-sm">
+              <li>Your fine-tunes solve conflicting tasks &mdash; merged models can regress on both.</li>
+              <li>The fine-tunes started from different bases &mdash; results are unpredictable.</li>
+              <li>You need guaranteed behavior &mdash; the merged model needs to be evaluated fresh.</li>
+            </ul>
+          </div>
+        </div>
+
+        <h3 class="section-heading">The code</h3>
+        <div class="code-toolbar">
+<pre><code class="language-python">import torch
+
+# Simple SLERP-style merge of two fine-tuned state dicts
+def slerp_merge(state1, state2, t=0.5):
+    merged = {}
+    for k in state1:
+        v1, v2 = state1[k].float(), state2[k].float()
+        # Flatten for angle calculation
+        f1, f2 = v1.flatten(), v2.flatten()
+        dot = torch.dot(f1, f2) / (f1.norm() * f2.norm() + 1e-8)
+        omega = torch.acos(dot.clamp(-1, 1))
+        if omega.abs() < 1e-4:
+            merged[k] = (1 - t) * v1 + t * v2   # nearly parallel: LERP
+        else:
+            merged[k] = (torch.sin((1 - t) * omega) / torch.sin(omega)) * v1 + \
+                        (torch.sin(t * omega) / torch.sin(omega)) * v2
+    return merged
+
+# Or use mergekit for the full toolkit
+# pip install mergekit
+# mergekit-yaml merge_config.yaml ./output_model</code></pre>
+        </div>
+
+        <h3 class="section-heading">What actually happened when we ran it</h3>
+        <figure class="result-figure">
+          <img src="images/notebooks/merging_comparison.png" alt="Chart from notebook 10 comparing SLERP, TIES, DARE merges against parent models" loading="lazy">
+          <figcaption>Notebook 10 &mdash; merged model matched parent quality on both tasks. Total training time: 6 seconds.</figcaption>
+        </figure>
+      </section>
+
+    </main>
+  </div>
 
   <!-- Footer -->
-  <footer class="bg-gray-900 text-gray-300 py-12 mt-20">
-    <div class="max-w-4xl mx-auto px-6">
-      <div class="grid gap-8 md:grid-cols-3 mb-8">
-        <div>
-          <h4 class="font-bold text-white mb-3">Learn</h4>
-          <ul class="space-y-2 text-sm">
-            <li><a href="techniques.html" class="hover:text-blue-300 transition-colors">Techniques Deep Dive</a></li>
-            <li><a href="comparison.html" class="hover:text-blue-300 transition-colors">Method Comparison</a></li>
-            <li><a href="choosing-method.html" class="hover:text-blue-300 transition-colors">Choosing a Method</a></li>
-          </ul>
-        </div>
-        <div>
-          <h4 class="font-bold text-white mb-3">Practice</h4>
-          <ul class="space-y-2 text-sm">
-            <li><a href="notebooks/02_full_finetuning.ipynb" class="hover:text-blue-300 transition-colors">Full Fine-Tuning Notebook</a></li>
-            <li><a href="guide.html" class="hover:text-blue-300 transition-colors">Step-by-Step Guide</a></li>
-          </ul>
-        </div>
-        <div>
-          <h4 class="font-bold text-white mb-3">Stay Safe</h4>
-          <ul class="space-y-2 text-sm">
-            <li><a href="safety.html" class="hover:text-blue-300 transition-colors">Safety & Ethics</a></li>
-          </ul>
-        </div>
+  <footer class="site-footer">
+    <div class="container-wide flex flex-wrap items-center justify-between gap-3">
+      <div>
+        Fine-tuning small language models without losing your mind (or your GPU).
       </div>
-      <div class="border-t border-gray-700 pt-6 text-center text-sm text-gray-500">
-        <p>SLM Fine-Tuning Tutorial — Built with ☕ and curiosity</p>
-      </div>
+      <nav class="flex gap-4 text-xs">
+        <a class="nav-link" href="index.html">Home</a>
+        <a class="nav-link" href="guide.html">Guide</a>
+        <a class="nav-link" href="https://github.com/kumarjit88/finetuning-slm" target="_blank" rel="noopener">GitHub</a>
+      </nav>
     </div>
   </footer>
 
-  <script src="js/main.js"></script>
+  <!-- Interactive Chart.js on the LoRA panel -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const canvas = document.getElementById('lora-chart');
+      if (!canvas || typeof Chart === 'undefined') return;
+
+      // Wait for Chart.js CDN (deferred) to attach
+      const draw = () => {
+        if (typeof Chart === 'undefined') { setTimeout(draw, 30); return; }
+        const ctx = canvas.getContext('2d');
+        const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+        const textColor = dark ? '#cbd5e1' : '#334155';
+
+        new Chart(ctx, {
+          type: 'scatter',
+          data: {
+            datasets: [
+              { label: 'Full FT',        data: [{ x: 135000000, y: 0.71 }], backgroundColor: '#ef4444', pointRadius: 9 },
+              { label: 'LoRA',           data: [{ x:    460000, y: 0.67 }], backgroundColor: '#3b82f6', pointRadius: 9 },
+              { label: 'DoRA',           data: [{ x:    465000, y: 0.68 }], backgroundColor: '#8b5cf6', pointRadius: 9 },
+              { label: 'Prompt tuning',  data: [{ x:     20000, y: 0.55 }], backgroundColor: '#f59e0b', pointRadius: 9 },
+              { label: 'Linear probe',   data: [{ x:    150000, y: 0.50 }], backgroundColor: '#10b981', pointRadius: 9 },
+              { label: 'Base model',     data: [{ x:         0, y: 0.44 }], backgroundColor: '#94a3b8', pointRadius: 9 }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              title: {
+                display: true,
+                text: 'Trainable parameters vs quality (medical QA, SmolLM2-135M)',
+                color: textColor,
+                font: { size: 13, weight: 'bold' }
+              },
+              legend: { labels: { color: textColor, font: { size: 11 } } },
+              tooltip: {
+                callbacks: {
+                  label: (c) => c.dataset.label + ': ' + c.parsed.x.toLocaleString() + ' params, ROUGE-1 = ' + c.parsed.y.toFixed(2)
+                }
+              }
+            },
+            scales: {
+              x: {
+                type: 'logarithmic',
+                title: { display: true, text: 'Trainable parameters (log scale)', color: textColor },
+                ticks: { color: textColor, callback: v => Number(v).toLocaleString() },
+                grid: { color: dark ? '#1e293b' : '#e2e8f0' }
+              },
+              y: {
+                title: { display: true, text: 'ROUGE-1 (higher = better)', color: textColor },
+                ticks: { color: textColor },
+                grid: { color: dark ? '#1e293b' : '#e2e8f0' },
+                min: 0.4, max: 0.75
+              }
+            }
+          }
+        });
+      };
+      draw();
+    });
+  </script>
 </body>
 </html>

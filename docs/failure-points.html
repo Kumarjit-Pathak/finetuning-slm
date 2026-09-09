@@ -3,26 +3,657 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>failure-points — SLM Fine-Tuning Tutorial</title>
+  <title>Failure Points — Fine-Tuning Small Language Models</title>
+  <meta name="description" content="Every failure mode we hit while running the 20 notebooks. Symptoms, causes, fixes, and a quiz to test your diagnostic skills.">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&family=Lora:ital,wght@1,500&display=swap" rel="stylesheet">
+
+  <!-- Tailwind -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { darkMode: ['selector', '[data-theme="dark"]'] };</script>
+
+  <!-- Chart.js -->
+  <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+
+  <!-- Local -->
   <link rel="stylesheet" href="css/style.css">
+  <script defer src="js/main.js"></script>
+
+  <style>
+    .failure-card {
+      background: var(--color-bg-alt);
+      border: 1px solid var(--color-border);
+      border-left: 4px solid;
+      border-radius: .75rem;
+      overflow: hidden;
+      margin-bottom: .75rem;
+      transition: border-color .15s;
+    }
+    .failure-card.sev-high { border-left-color: var(--color-danger); }
+    .failure-card.sev-medium { border-left-color: var(--color-warning); }
+    .failure-card.sev-low { border-left-color: var(--color-success); }
+
+    .failure-summary {
+      padding: 1rem 1.25rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      justify-content: space-between;
+      list-style: none;
+    }
+    .failure-summary::-webkit-details-marker { display: none; }
+    .failure-summary::marker { content: ''; }
+    .failure-title { font-weight: 600; font-size: 1.05rem; }
+    .failure-symptom { color: var(--color-text-muted); font-size: .85rem; margin-top: .15rem; }
+    .failure-toggle {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.1rem;
+      color: var(--color-text-muted);
+      flex-shrink: 0;
+    }
+    details[open] .failure-toggle { transform: rotate(45deg); }
+
+    .failure-body {
+      padding: 0 1.25rem 1.25rem 1.25rem;
+      border-top: 1px solid var(--color-border);
+    }
+    .failure-body h4 {
+      font-size: .75rem;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--color-text-muted);
+      margin-top: 1.25rem;
+      margin-bottom: .35rem;
+    }
+    .failure-body p { color: var(--color-text); font-size: .9rem; }
+    .sev-badge {
+      display: inline-flex;
+      padding: .15rem .625rem;
+      font-size: .68rem;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      border-radius: 9999px;
+    }
+    .sev-badge.high { background: rgba(239, 68, 68, .12); color: var(--color-danger); }
+    .sev-badge.medium { background: rgba(245, 158, 11, .14); color: var(--color-warning); }
+    .sev-badge.low { background: rgba(16, 185, 129, .12); color: var(--color-success); }
+
+    /* Quiz styles */
+    .quiz-panel {
+      background: var(--color-bg-alt);
+      border: 1px solid var(--color-border);
+      border-radius: 1rem;
+      padding: 1.5rem;
+    }
+    .quiz-option {
+      display: block;
+      width: 100%;
+      padding: .875rem 1.125rem;
+      text-align: left;
+      background: var(--color-bg);
+      border: 1px solid var(--color-border);
+      border-radius: .5rem;
+      cursor: pointer;
+      transition: all .15s;
+      color: var(--color-text);
+      font-size: .9rem;
+    }
+    .quiz-option:hover {
+      border-color: var(--color-primary);
+      transform: translateX(2px);
+    }
+    .quiz-option.correct {
+      background: rgba(16, 185, 129, .1);
+      border-color: var(--color-success);
+      color: var(--color-success);
+    }
+    .quiz-option.wrong {
+      background: rgba(239, 68, 68, .1);
+      border-color: var(--color-danger);
+      color: var(--color-danger);
+    }
+    .quiz-option:disabled { cursor: default; transform: none; }
+    .quiz-canvas-wrap {
+      height: 260px;
+      background: var(--color-bg);
+      border: 1px solid var(--color-border);
+      border-radius: .5rem;
+      padding: .75rem;
+    }
+    .filter-btn {
+      padding: .375rem .875rem;
+      border: 1px solid var(--color-border);
+      border-radius: 9999px;
+      background: var(--color-bg);
+      color: var(--color-text-muted);
+      font-size: .8rem;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .filter-btn.active {
+      background: var(--color-primary);
+      color: #fff;
+      border-color: var(--color-primary);
+    }
+    .filter-btn:hover:not(.active) { color: var(--color-primary); border-color: var(--color-primary); }
+  </style>
 </head>
-<body class="min-h-screen">
-  <nav class="bg-gray-900 text-white py-3 px-6">
-    <div class="max-w-6xl mx-auto flex justify-between items-center">
-      <a href="index.html" class="font-bold">SLM Fine-Tuning</a>
-      <div class="flex gap-4 text-sm">
-        <a href="techniques.html" class="hover:text-blue-300">Techniques</a>
-        <a href="comparison.html" class="hover:text-blue-300">Compare</a>
-        <a href="safety.html" class="hover:text-blue-300">Safety</a>
-        <a href="guide.html" class="hover:text-blue-300">Guide</a>
+
+<body class="antialiased">
+
+  <!-- Nav -->
+  <header class="nav-shell sticky top-0 z-40">
+    <div class="container-wide flex items-center justify-between py-3">
+      <a href="index.html" class="font-bold tracking-tight text-lg" style="color: var(--color-text);">
+        Fine-Tuning SLMs
+      </a>
+      <nav class="hidden md:flex items-center gap-6 text-sm font-medium">
+        <a href="index.html" class="nav-link">Home</a>
+        <a href="techniques.html" class="nav-link">Techniques</a>
+        <a href="comparison.html" class="nav-link">Comparison</a>
+        <a href="choosing-method.html" class="nav-link">Which Method?</a>
+        <a href="safety.html" class="nav-link">Safety</a>
+        <a href="failure-points.html" class="nav-link">Failure Points</a>
+        <a href="fun-usecases.html" class="nav-link">Fun</a>
+        <a href="industry-usecases.html" class="nav-link">Industry</a>
+        <a href="guide.html" class="nav-link">Guide</a>
+      </nav>
+      <button type="button" class="btn btn-ghost text-xs" data-theme-toggle onclick="slmToggleTheme()">Dark mode</button>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <section class="container-wide pt-10 pb-6">
+    <div class="max-w-3xl">
+      <span class="eyebrow">Things that went wrong</span>
+      <h1 class="hero-tagline mt-2">
+        Every failure mode we hit,<br>
+        <span style="color: var(--color-primary);">so you don&#39;t have to.</span>
+      </h1>
+      <p class="mt-4 text-slate-600 dark:text-slate-300 text-lg leading-relaxed">
+        Twenty notebooks. Roughly forty runs that broke. This is the greatest hits: the training curves that
+        went horribly wrong, why they went wrong, and how to fix them without a therapist. Also a quiz at the
+        bottom, because misery loves company.
+      </p>
+    </div>
+  </section>
+
+  <!-- Filter -->
+  <section class="container-wide py-6">
+    <div class="flex items-center gap-2 flex-wrap">
+      <span class="text-xs uppercase tracking-widest text-slate-500 mr-2">Filter by severity:</span>
+      <button class="filter-btn active" onclick="filterFailures('all', this)">All</button>
+      <button class="filter-btn" onclick="filterFailures('high', this)">High</button>
+      <button class="filter-btn" onclick="filterFailures('medium', this)">Medium</button>
+      <button class="filter-btn" onclick="filterFailures('low', this)">Low</button>
+    </div>
+  </section>
+
+  <!-- Failure catalog -->
+  <section class="container-wide pb-8" id="failure-list">
+
+    <details class="failure-card sev-high" data-sev="high">
+      <summary class="failure-summary">
+        <div>
+          <div class="failure-title">Loss goes to NaN in the first 10 steps</div>
+          <div class="failure-symptom">The training curve is a cliff. A very sad cliff.</div>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="sev-badge high">High</span>
+          <span class="failure-toggle">+</span>
+        </div>
+      </summary>
+      <div class="failure-body">
+        <h4>Symptom</h4>
+        <p>Loss displays a normal number for 1-3 steps, then <code>nan</code>, and stays <code>nan</code>. Model weights are now unusable.</p>
+        <h4>Cause</h4>
+        <p>Learning rate too large for the model + optimizer combination. Gradient explosion at the first optimizer step. Sometimes: numerical instability from mixed precision on a layer that doesn&#39;t like it.</p>
+        <h4>Fix</h4>
+        <p>Drop the learning rate by 10&times;. If you were at <code>2e-3</code>, try <code>2e-4</code>. If you were at <code>2e-4</code>, try <code>2e-5</code>. Add <code>warmup_ratio=0.03</code> to your training args. If it still happens, switch from fp16 to bf16 (Ampere+ GPUs only) or force fp32.</p>
+      </div>
+    </details>
+
+    <details class="failure-card sev-high" data-sev="high">
+      <summary class="failure-summary">
+        <div>
+          <div class="failure-title">Model produces garbage tokens after training</div>
+          <div class="failure-symptom">Loss looked fine. Generations are nonsense. What.</div>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="sev-badge high">High</span>
+          <span class="failure-toggle">+</span>
+        </div>
+      </summary>
+      <div class="failure-body">
+        <h4>Symptom</h4>
+        <p>Training loss decreased normally. Model checkpoint saved. When you call <code>model.generate()</code>, output is repeating tokens, random symbols, or complete nonsense.</p>
+        <h4>Cause (this one bit us three times)</h4>
+        <p><code>SFTTrainer</code> and <code>DPOTrainer</code> enable gradient checkpointing during training. It stays enabled after <code>trainer.train()</code> exits. Transformers detects it and forces <code>use_cache=False</code>. Every token generation runs the full forward pass without cached keys/values. On a stateful model, this produces garbage.</p>
+        <h4>Fix</h4>
+        <div class="code-toolbar">
+<pre><code class="language-python"># Do this immediately after every trainer.train() call
+model.gradient_checkpointing_disable()
+model.config.use_cache = True
+model.eval()</code></pre>
+        </div>
+      </div>
+    </details>
+
+    <details class="failure-card sev-high" data-sev="high">
+      <summary class="failure-symptom">
+        <div>
+          <div class="failure-title">Model refuses to answer anything after fine-tuning</div>
+          <div class="failure-symptom">Every prompt returns &ldquo;As an AI, I cannot...&rdquo;.</div>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="sev-badge high">High</span>
+          <span class="failure-toggle">+</span>
+        </div>
+      </summary>
+      <div class="failure-body">
+        <h4>Symptom</h4>
+        <p>The fine-tune completed. Now every generation, regardless of prompt, is a variant of &ldquo;I&#39;m sorry, I can&#39;t help with that&rdquo;.</p>
+        <h4>Cause</h4>
+        <p>Two candidates: (1) chat template mismatch &mdash; you trained without the model&#39;s expected template and now the model treats every prompt as adversarial. (2) The training data disproportionately contained refusal examples and the model overfit on refusal.</p>
+        <h4>Fix</h4>
+        <p>Use <code>tokenizer.apply_chat_template([...])</code> for both training and inference. If you&#39;re on an instruct model (SmolLM2-Instruct, Qwen-Instruct, etc.), this is not optional. Also check the ratio of refusals in your training data.</p>
+      </div>
+    </details>
+
+    <details class="failure-card sev-medium" data-sev="medium">
+      <summary class="failure-summary">
+        <div>
+          <div class="failure-title">Loss plateaus immediately and never drops</div>
+          <div class="failure-symptom">First epoch loss = last epoch loss. The line is flat.</div>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="sev-badge medium">Medium</span>
+          <span class="failure-toggle">+</span>
+        </div>
+      </summary>
+      <div class="failure-body">
+        <h4>Symptom</h4>
+        <p>Loss oscillates around a fixed value from step 1 to step N. No improvement across epochs.</p>
+        <h4>Cause</h4>
+        <p>Learning rate is too small (rare), OR &mdash; and this is more common &mdash; the model is not actually receiving gradients. If you&#39;re using PEFT, check that <code>get_peft_model()</code> is being called before the trainer wraps it, and that some parameters have <code>requires_grad=True</code>.</p>
+        <h4>Fix</h4>
+        <div class="code-toolbar">
+<pre><code class="language-python">trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)
+total     = sum(p.numel() for p in model.parameters())
+print(f"Trainable: {trainable:,} / {total:,}")
+# For LoRA r=8 on SmolLM2-135M: should be ~460K
+# If this prints 0: PEFT config didn't attach properly.</code></pre>
+        </div>
+      </div>
+    </details>
+
+    <details class="failure-card sev-medium" data-sev="medium">
+      <summary class="failure-summary">
+        <div>
+          <div class="failure-title">CUDA out of memory during backward pass</div>
+          <div class="failure-symptom">Forward pass worked. Backward pass exploded.</div>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="sev-badge medium">Medium</span>
+          <span class="failure-toggle">+</span>
+        </div>
+      </summary>
+      <div class="failure-body">
+        <h4>Symptom</h4>
+        <p><code>torch.cuda.OutOfMemoryError</code> during the first optimizer step. Forward pass fit; storing activations for backward did not.</p>
+        <h4>Cause</h4>
+        <p>Peak memory during training is roughly: <code>weights + gradients + optimizer state + activations</code>. Adam optimizer alone doubles the memory of the weights. Activations scale with batch size &times; sequence length.</p>
+        <h4>Fix (try in this order)</h4>
+        <p>1. Reduce <code>per_device_train_batch_size</code> to 1 and use <code>gradient_accumulation_steps=8</code>. Same effective batch size, less peak memory.<br>2. Enable <code>gradient_checkpointing=True</code>. Trades ~20% speed for ~40% memory.<br>3. Reduce <code>max_length</code>. Activations scale quadratically with sequence length via attention.<br>4. Switch from full FT to LoRA. Switch from LoRA to QLoRA. Escalate as needed.</p>
+      </div>
+    </details>
+
+    <details class="failure-card sev-medium" data-sev="medium">
+      <summary class="failure-summary">
+        <div>
+          <div class="failure-title">Model overfits to training examples verbatim</div>
+          <div class="failure-symptom">On held-out data: nonsense. On training data: perfect.</div>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="sev-badge medium">Medium</span>
+          <span class="failure-toggle">+</span>
+        </div>
+      </summary>
+      <div class="failure-body">
+        <h4>Symptom</h4>
+        <p>Train loss goes below 0.1. Eval loss doesn&#39;t. The model can recite training examples word-for-word but fails on paraphrased or held-out inputs.</p>
+        <h4>Cause</h4>
+        <p>Too many epochs on too little data with too much model capacity. Standard overfitting.</p>
+        <h4>Fix</h4>
+        <p>Cut epochs to 3-5. Add validation split and early stopping. Increase <code>lora_dropout</code> from 0.05 to 0.1. If dataset is under 100 examples, consider prompt tuning instead (fewer trainable parameters, less capacity to overfit).</p>
+      </div>
+    </details>
+
+    <details class="failure-card sev-medium" data-sev="medium">
+      <summary class="failure-summary">
+        <div>
+          <div class="failure-title">DPO loss stays close to 0.693 and never drops</div>
+          <div class="failure-symptom">DPO trained &ldquo;successfully&rdquo;. Model has no opinions.</div>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="sev-badge medium">Medium</span>
+          <span class="failure-toggle">+</span>
+        </div>
+      </summary>
+      <div class="failure-body">
+        <h4>Symptom</h4>
+        <p>DPO loss hovers around <code>log 2 &asymp; 0.693</code> for the entire training run. Chosen and rejected responses have the same likelihood after training.</p>
+        <h4>Cause</h4>
+        <p>Chosen and rejected are too similar &mdash; the model can&#39;t tell them apart. Or beta is too high (KL penalty too strong, policy can&#39;t drift from reference).</p>
+        <h4>Fix</h4>
+        <p>Verify your preference pairs by manually eyeballing 10 of them. Chosen should be visibly better. Then drop <code>beta</code> from 0.1 to 0.05. If loss still won&#39;t drop, your pairs may need more contrast.</p>
+      </div>
+    </details>
+
+    <details class="failure-card sev-low" data-sev="low">
+      <summary class="failure-summary">
+        <div>
+          <div class="failure-title">SFTConfig throws &ldquo;unexpected keyword max_seq_length&rdquo;</div>
+          <div class="failure-symptom">Code worked in every tutorial you found online.</div>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="sev-badge low">Low</span>
+          <span class="failure-toggle">+</span>
+        </div>
+      </summary>
+      <div class="failure-body">
+        <h4>Symptom</h4>
+        <p><code>TypeError: SFTConfig.__init__() got an unexpected keyword argument 'max_seq_length'</code></p>
+        <h4>Cause</h4>
+        <p>trl 1.9.x renamed <code>max_seq_length</code> to <code>max_length</code>. Every StackOverflow answer and old tutorial uses the old name.</p>
+        <h4>Fix</h4>
+        <div class="code-toolbar">
+<pre><code class="language-python"># OLD (trl <= 1.8)
+sft_config = SFTConfig(max_seq_length=384, ...)
+# NEW (trl >= 1.9)
+sft_config = SFTConfig(max_length=384, ...)</code></pre>
+        </div>
+      </div>
+    </details>
+
+    <details class="failure-card sev-low" data-sev="low">
+      <summary class="failure-summary">
+        <div>
+          <div class="failure-title">DPOConfig throws &ldquo;unexpected keyword max_prompt_length&rdquo;</div>
+          <div class="failure-symptom">The very same trl migration, just twice.</div>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="sev-badge low">Low</span>
+          <span class="failure-toggle">+</span>
+        </div>
+      </summary>
+      <div class="failure-body">
+        <h4>Cause</h4>
+        <p>Same trl 1.9.x cleanup. <code>max_prompt_length</code> was removed. The trainer now uses <code>max_length</code> and derives prompt length automatically.</p>
+        <h4>Fix</h4>
+        <p>Just drop the <code>max_prompt_length</code> parameter. Set <code>max_length</code> large enough to fit prompt + longest expected response.</p>
+      </div>
+    </details>
+
+    <details class="failure-card sev-low" data-sev="low">
+      <summary class="failure-summary">
+        <div>
+          <div class="failure-title">Training is inexplicably slow on Apple Silicon</div>
+          <div class="failure-symptom">M4 Max should not take 90 minutes for 20 steps.</div>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="sev-badge low">Low</span>
+          <span class="failure-toggle">+</span>
+        </div>
+      </summary>
+      <div class="failure-body">
+        <h4>Cause</h4>
+        <p>You&#39;re running on CPU because MPS wasn&#39;t detected, OR your model is loaded in fp32 when fp16 would run 2-3&times; faster on MPS, OR your batch size is 1 with sequence length 2048.</p>
+        <h4>Fix</h4>
+        <p>Print <code>torch.backends.mps.is_available()</code>. If False, upgrade PyTorch. If True but you&#39;re still slow, load the model with <code>dtype=torch.float16</code> and move to MPS. See <a class="text-blue-500 hover:underline" href="techniques.html#qlora">Apple Silicon guide</a> for the full performance sweep.</p>
+      </div>
+    </details>
+
+  </section>
+
+  <!-- QUIZ -->
+  <section class="container-wide py-10">
+    <h2 class="section-heading">Quiz: what went wrong in this training curve?</h2>
+    <p class="text-slate-600 dark:text-slate-300 mb-4 max-w-3xl">
+      Ten randomly generated (but realistic) training curves. Match each curve to the correct diagnosis. Your
+      score persists in this session only, because we do not want you to memorize the answers.
+    </p>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl">
+      <div class="quiz-panel">
+        <div class="text-xs uppercase tracking-widest text-slate-500">Curve <span id="quiz-num">1</span> of 5</div>
+        <div class="text-lg font-semibold mt-1" id="quiz-hint">The loss over 20 training steps.</div>
+        <div class="quiz-canvas-wrap mt-3">
+          <canvas id="quiz-canvas"></canvas>
+        </div>
+        <div class="mt-3 text-sm text-slate-500" id="quiz-explanation" style="min-height: 2rem;"></div>
+      </div>
+      <div class="quiz-panel">
+        <div class="text-xs uppercase tracking-widest text-slate-500">Diagnose the problem</div>
+        <div class="mt-3 space-y-2" id="quiz-options"></div>
+        <div class="mt-6 pt-4 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between">
+          <div class="text-sm">Score: <span id="quiz-score" class="font-semibold">0</span> / 5</div>
+          <button class="btn btn-outline text-sm" id="quiz-next" onclick="nextQuestion()" disabled>Next curve</button>
+        </div>
       </div>
     </div>
-  </nav>
-  <main class="max-w-4xl mx-auto px-6 py-12">
-    <h1 class="text-3xl font-bold mb-6">failure points</h1>
-    <p class="text-gray-500">🚧 Under development</p>
-  </main>
-  <script src="js/main.js"></script>
+  </section>
+
+  <!-- Closing meme card (no emojis, just text) -->
+  <section class="container-wide py-10">
+    <blockquote class="callout max-w-3xl">
+      <span class="callout-label">Final observation</span>
+      Ninety percent of fine-tuning problems are one of: learning rate too high, chat template not applied,
+      gradient checkpointing still enabled, or trl renamed the argument. Check those four before you check
+      anything else. It will save you an afternoon.
+    </blockquote>
+  </section>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="container-wide flex flex-wrap items-center justify-between gap-3">
+      <div>Fine-tuning small language models without losing your mind (or your GPU).</div>
+      <nav class="flex gap-4 text-xs">
+        <a class="nav-link" href="safety.html">Safety</a>
+        <a class="nav-link" href="techniques.html">Techniques</a>
+        <a class="nav-link" href="guide.html">Guide</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script>
+    // ---- Filter ----
+    function filterFailures(sev, btn) {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('#failure-list details').forEach(el => {
+        el.style.display = (sev === 'all' || el.getAttribute('data-sev') === sev) ? '' : 'none';
+      });
+    }
+
+    // ---- Quiz ----
+    // Each question: a synthetic loss curve + 4 options, one correct.
+    // Curves are pre-scripted so they render deterministically.
+    const QUESTIONS = [
+      {
+        title: 'Loss curve over 20 training steps',
+        curve: [3.2, 3.1, NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN],
+        answer: 0,
+        options: [
+          { text: 'Learning rate too high &mdash; gradient exploded to NaN', correct: true },
+          { text: 'Overfitting on training data', correct: false },
+          { text: 'Chat template not applied', correct: false },
+          { text: 'Batch size too small' , correct: false }
+        ],
+        explain: 'Loss reaches NaN by step 3 and stays there. Classic gradient explosion from a too-large learning rate. Drop by 10x and add warmup.'
+      },
+      {
+        title: 'Loss curve over 30 training steps',
+        curve: [2.5, 2.5, 2.5, 2.51, 2.49, 2.5, 2.51, 2.5, 2.49, 2.5, 2.51, 2.5, 2.5, 2.49, 2.5, 2.5, 2.51, 2.5, 2.5, 2.5, 2.51, 2.5, 2.49, 2.5, 2.5, 2.51, 2.5, 2.5, 2.49, 2.5],
+        answer: 1,
+        options: [
+          { text: 'Learning rate too high', correct: false },
+          { text: 'No trainable parameters &mdash; PEFT config not attached', correct: true },
+          { text: 'Data pipeline is fine', correct: false },
+          { text: 'Model has converged perfectly', correct: false }
+        ],
+        explain: 'Loss is flat across all steps. The model is not learning. Check that get_peft_model() was called and that trainable params > 0.'
+      },
+      {
+        title: 'Train loss (blue) vs eval loss (orange) over 10 epochs',
+        curve: [2.4, 1.9, 1.5, 1.1, 0.7, 0.4, 0.2, 0.1, 0.05, 0.03],
+        evalCurve: [2.4, 2.0, 1.7, 1.6, 1.8, 2.1, 2.5, 2.9, 3.4, 3.9],
+        answer: 2,
+        options: [
+          { text: 'Training is going well &mdash; ship it', correct: false },
+          { text: 'Data leak from eval set into train set', correct: false },
+          { text: 'Overfitting &mdash; eval loss starts climbing after epoch 4', correct: true },
+          { text: 'Learning rate too low', correct: false }
+        ],
+        explain: 'Classic overfitting curve. Train loss goes to zero. Eval loss goes up. Stop training around epoch 4. Add dropout or reduce epochs.'
+      },
+      {
+        title: 'DPO loss over 12 training steps',
+        curve: [0.693, 0.693, 0.692, 0.694, 0.693, 0.693, 0.692, 0.693, 0.694, 0.693, 0.693, 0.693],
+        answer: 3,
+        options: [
+          { text: 'DPO training successful &mdash; loss below log 2', correct: false },
+          { text: 'Model has learned strong preferences', correct: false },
+          { text: 'Learning rate too high for DPO', correct: false },
+          { text: 'Chosen and rejected pairs are indistinguishable', correct: true }
+        ],
+        explain: 'DPO loss stuck at log 2 = 0.693 means chosen and rejected have equal likelihood. The model cannot tell the pairs apart. Add more contrast between chosen and rejected.'
+      },
+      {
+        title: 'Loss curve over 15 training steps',
+        curve: [3.0, 2.7, 2.4, 2.1, 1.8, 1.6, 1.4, 1.3, 1.2, 1.15, 1.1, 1.08, 1.06, 1.05, 1.04],
+        answer: 0,
+        options: [
+          { text: 'Healthy training &mdash; loss converging nicely', correct: true },
+          { text: 'Learning rate too low', correct: false },
+          { text: 'Model is not learning', correct: false },
+          { text: 'Overfitting', correct: false }
+        ],
+        explain: 'This is what you want. Loss decreases smoothly and starts to plateau. Save the checkpoint. Take the rest of the afternoon off.'
+      }
+    ];
+
+    let currentQ = 0;
+    let score = 0;
+    let chart;
+    let answered = false;
+
+    function textColor() {
+      return document.documentElement.getAttribute('data-theme') === 'dark' ? '#cbd5e1' : '#334155';
+    }
+    function gridColor() {
+      return document.documentElement.getAttribute('data-theme') === 'dark' ? '#1e293b' : '#e2e8f0';
+    }
+
+    function renderQuestion() {
+      answered = false;
+      const q = QUESTIONS[currentQ];
+      document.getElementById('quiz-num').textContent = currentQ + 1;
+      document.getElementById('quiz-hint').textContent = q.title;
+      document.getElementById('quiz-explanation').textContent = '';
+      document.getElementById('quiz-next').disabled = true;
+
+      // Render options
+      const container = document.getElementById('quiz-options');
+      container.innerHTML = '';
+      q.options.forEach((opt, i) => {
+        const btn = document.createElement('button');
+        btn.className = 'quiz-option';
+        btn.innerHTML = opt.text;
+        btn.onclick = () => selectAnswer(i, btn);
+        container.appendChild(btn);
+      });
+
+      // Render curve
+      if (chart) chart.destroy();
+      const ctx = document.getElementById('quiz-canvas').getContext('2d');
+      const labels = q.curve.map((_, i) => i + 1);
+      const datasets = [{
+        label: 'Loss',
+        data: q.curve.map(v => (isNaN(v) ? null : v)),
+        borderColor: '#3b82f6',
+        backgroundColor: '#3b82f622',
+        borderWidth: 2,
+        tension: 0.15,
+        spanGaps: false,
+        pointRadius: 3
+      }];
+      if (q.evalCurve) {
+        datasets[0].label = 'Train loss';
+        datasets.push({
+          label: 'Eval loss',
+          data: q.evalCurve,
+          borderColor: '#f59e0b',
+          backgroundColor: '#f59e0b22',
+          borderWidth: 2,
+          tension: 0.15,
+          pointRadius: 3
+        });
+      }
+      chart = new Chart(ctx, {
+        type: 'line',
+        data: { labels, datasets },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { labels: { color: textColor() } } },
+          scales: {
+            x: { ticks: { color: textColor() }, grid: { color: gridColor() } },
+            y: { ticks: { color: textColor() }, grid: { color: gridColor() } }
+          }
+        }
+      });
+    }
+
+    function selectAnswer(idx, btn) {
+      if (answered) return;
+      answered = true;
+      const q = QUESTIONS[currentQ];
+      document.querySelectorAll('.quiz-option').forEach((el, i) => {
+        el.disabled = true;
+        if (q.options[i].correct) el.classList.add('correct');
+        else if (i === idx) el.classList.add('wrong');
+      });
+      if (q.options[idx].correct) {
+        score++;
+        document.getElementById('quiz-score').textContent = score;
+      }
+      document.getElementById('quiz-explanation').innerHTML = '<strong>' + (q.options[idx].correct ? 'Correct.' : 'Not quite.') + '</strong> ' + q.explain;
+      document.getElementById('quiz-next').disabled = false;
+    }
+
+    function nextQuestion() {
+      currentQ = (currentQ + 1) % QUESTIONS.length;
+      if (currentQ === 0) {
+        // Loop &mdash; reset score for a fresh run
+        score = 0;
+        document.getElementById('quiz-score').textContent = score;
+      }
+      renderQuestion();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      function tryRender() {
+        if (typeof Chart === 'undefined') { setTimeout(tryRender, 30); return; }
+        renderQuestion();
+      }
+      tryRender();
+    });
+  </script>
 </body>
 </html>

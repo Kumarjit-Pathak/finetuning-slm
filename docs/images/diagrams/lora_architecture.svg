@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 380" role="img" aria-labelledby="lora-title lora-desc">
+  <title id="lora-title">LoRA architecture: frozen base weights plus a trainable low-rank update</title>
+  <desc id="lora-desc">A visual explanation of Low-Rank Adaptation. The frozen pretrained weight matrix W is a large square. Two small matrices A and B, multiplied together, form a low-rank update that is added to W's output. Only A and B are trained.</desc>
+
+  <defs>
+    <linearGradient id="frozen" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#cbd5e1"/>
+      <stop offset="1" stop-color="#94a3b8"/>
+    </linearGradient>
+    <linearGradient id="trainA" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#a78bfa"/>
+      <stop offset="1" stop-color="#8b5cf6"/>
+    </linearGradient>
+    <linearGradient id="trainB" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#60a5fa"/>
+      <stop offset="1" stop-color="#3b82f6"/>
+    </linearGradient>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#475569"/>
+    </marker>
+  </defs>
+
+  <style>
+    .lbl        { font: 500 13px 'Inter', system-ui, sans-serif; fill: #0f172a; }
+    .lbl-small  { font: 500 11px 'Inter', system-ui, sans-serif; fill: #475569; }
+    .lbl-title  { font: 700 14px 'Inter', system-ui, sans-serif; fill: #0f172a; }
+    .lbl-math   { font: italic 600 15px 'JetBrains Mono', monospace; fill: #0f172a; }
+    .lbl-lock   { font: 600 10px 'Inter', system-ui, sans-serif; fill: #64748b; }
+    .lbl-train  { font: 600 10px 'Inter', system-ui, sans-serif; fill: #16a34a; }
+    [data-theme="dark"] .lbl,
+    [data-theme="dark"] .lbl-title,
+    [data-theme="dark"] .lbl-math { fill: #f1f5f9; }
+    [data-theme="dark"] .lbl-small,
+    [data-theme="dark"] .lbl-lock { fill: #cbd5e1; }
+  </style>
+
+  <!-- Input -->
+  <text x="30" y="200" class="lbl-math">x</text>
+  <line x1="45" y1="195" x2="90" y2="195" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Frozen W (large square) -->
+  <rect x="105" y="100" width="180" height="180" rx="8" fill="url(#frozen)" stroke="#64748b" stroke-width="1"/>
+  <text x="195" y="185" class="lbl-title" text-anchor="middle">W (frozen)</text>
+  <text x="195" y="205" class="lbl-small" text-anchor="middle">shape: d × d</text>
+  <text x="195" y="225" class="lbl-small" text-anchor="middle">e.g. 576 × 576</text>
+  <text x="195" y="90" class="lbl-lock" text-anchor="middle">no gradient</text>
+
+  <!-- Arrow from W -->
+  <line x1="285" y1="190" x2="470" y2="170" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Trainable path: A then B -->
+  <!-- A: tall thin rectangle (r × d) -->
+  <rect x="115" y="315" width="60" height="40" rx="6" fill="url(#trainA)" stroke="#7c3aed" stroke-width="1"/>
+  <text x="145" y="340" class="lbl" text-anchor="middle" fill="#fff">A</text>
+  <text x="145" y="375" class="lbl-small" text-anchor="middle">r × d</text>
+  <text x="145" y="305" class="lbl-train" text-anchor="middle">trainable</text>
+
+  <!-- Multiply symbol -->
+  <text x="200" y="342" class="lbl-math">×</text>
+
+  <!-- B: wide short rectangle (d × r) -->
+  <rect x="225" y="315" width="140" height="40" rx="6" fill="url(#trainB)" stroke="#1d4ed8" stroke-width="1"/>
+  <text x="295" y="340" class="lbl" text-anchor="middle" fill="#fff">B</text>
+  <text x="295" y="375" class="lbl-small" text-anchor="middle">d × r</text>
+  <text x="295" y="305" class="lbl-train" text-anchor="middle">trainable</text>
+
+  <!-- Route x into A -->
+  <line x1="80" y1="200" x2="80" y2="335" stroke="#475569" stroke-width="1.5" stroke-dasharray="4 3"/>
+  <line x1="80" y1="335" x2="110" y2="335" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Route B output up to sum -->
+  <line x1="365" y1="335" x2="470" y2="335" stroke="#475569" stroke-width="1.5"/>
+  <line x1="470" y1="335" x2="470" y2="215" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Sum node -->
+  <circle cx="490" cy="195" r="18" fill="#f8fafc" stroke="#475569" stroke-width="1.5"/>
+  <text x="490" y="200" class="lbl-math" text-anchor="middle">+</text>
+
+  <!-- Output -->
+  <line x1="510" y1="195" x2="580" y2="195" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="590" y="200" class="lbl-math">h</text>
+
+  <!-- Formula panel -->
+  <rect x="105" y="30" width="480" height="50" rx="8" fill="#f8fafc" stroke="#e2e8f0"/>
+  <text x="345" y="60" class="lbl-math" text-anchor="middle">h = W·x + B·(A·x)</text>
+  <text x="345" y="75" class="lbl-small" text-anchor="middle">r ≪ d, so B·A has rank r but reshapes to d × d</text>
+
+  <!-- Scale factor -->
+  <text x="205" y="292" class="lbl-lock" text-anchor="middle">rank r = 8 (typical)</text>
+
+  <!-- Right-side stats -->
+  <text x="615" y="55" class="lbl-title">Parameters</text>
+  <text x="615" y="80" class="lbl-small">Full FT:</text>
+  <text x="615" y="98" class="lbl-small" font-weight="600" fill="#dc2626">d² = 331,776</text>
+  <text x="615" y="125" class="lbl-small">LoRA (r=8):</text>
+  <text x="615" y="143" class="lbl-small" font-weight="600" fill="#16a34a">2·d·r = 9,216</text>
+  <text x="615" y="170" class="lbl-small" font-weight="600" fill="#3b82f6">~36× fewer</text>
+
+  <text x="615" y="215" class="lbl-title">At inference</text>
+  <text x="615" y="240" class="lbl-small">Fuse B·A into W:</text>
+  <text x="615" y="258" class="lbl-small" font-weight="600" fill="#16a34a">zero overhead</text>
+</svg>

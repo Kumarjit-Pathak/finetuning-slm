@@ -3,26 +3,610 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>industry-usecases — SLM Fine-Tuning Tutorial</title>
+  <title>Industry Use Cases — Fine-Tuning Small Language Models</title>
+  <meta name="description" content="Two production-serious fine-tuning use cases: an agentic tool-calling SLM and a privacy-preserving clinical summarizer. Architecture, safety, and ROI.">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&family=Lora:ital,wght@1,500&display=swap" rel="stylesheet">
+
+  <!-- Tailwind -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { darkMode: ['selector', '[data-theme="dark"]'] };</script>
+
+  <!-- Mermaid + Chart.js -->
+  <script defer src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+
+  <!-- Local -->
   <link rel="stylesheet" href="css/style.css">
+  <script defer src="js/main.js"></script>
+
+  <style>
+    .kpi-card {
+      background: var(--color-bg-alt);
+      border: 1px solid var(--color-border);
+      border-radius: .75rem;
+      padding: 1.25rem;
+      text-align: center;
+    }
+    .kpi-number {
+      font-size: 2.25rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1;
+    }
+    .kpi-number.blue { color: var(--color-primary); }
+    .kpi-number.green { color: var(--color-success); }
+    .kpi-number.purple { color: var(--color-accent); }
+    .kpi-number.orange { color: var(--color-warning); }
+    .kpi-label {
+      font-size: .7rem;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--color-text-muted);
+      margin-top: .35rem;
+    }
+    .filter-slider { accent-color: var(--color-primary); }
+
+    .value-item {
+      display: flex;
+      align-items: flex-start;
+      gap: .875rem;
+      padding: .875rem 0;
+      border-bottom: 1px solid var(--color-border);
+    }
+    .value-item:last-child { border-bottom: none; }
+    .value-item .num {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      color: var(--color-primary);
+      flex-shrink: 0;
+      min-width: 2.5rem;
+    }
+
+    .safety-callout {
+      background: rgba(239, 68, 68, .08);
+      border: 1px solid rgba(239, 68, 68, .3);
+      border-radius: .5rem;
+      padding: 1rem 1.25rem;
+      font-size: .9rem;
+    }
+    .safety-callout strong { color: var(--color-danger); }
+
+    .showcase-section { scroll-margin-top: 5rem; }
+  </style>
 </head>
-<body class="min-h-screen">
-  <nav class="bg-gray-900 text-white py-3 px-6">
-    <div class="max-w-6xl mx-auto flex justify-between items-center">
-      <a href="index.html" class="font-bold">SLM Fine-Tuning</a>
-      <div class="flex gap-4 text-sm">
-        <a href="techniques.html" class="hover:text-blue-300">Techniques</a>
-        <a href="comparison.html" class="hover:text-blue-300">Compare</a>
-        <a href="safety.html" class="hover:text-blue-300">Safety</a>
-        <a href="guide.html" class="hover:text-blue-300">Guide</a>
+
+<body class="antialiased">
+
+  <!-- Nav -->
+  <header class="nav-shell sticky top-0 z-40">
+    <div class="container-wide flex items-center justify-between py-3">
+      <a href="index.html" class="font-bold tracking-tight text-lg" style="color: var(--color-text);">
+        Fine-Tuning SLMs
+      </a>
+      <nav class="hidden md:flex items-center gap-6 text-sm font-medium">
+        <a href="index.html" class="nav-link">Home</a>
+        <a href="techniques.html" class="nav-link">Techniques</a>
+        <a href="comparison.html" class="nav-link">Comparison</a>
+        <a href="choosing-method.html" class="nav-link">Which Method?</a>
+        <a href="safety.html" class="nav-link">Safety</a>
+        <a href="failure-points.html" class="nav-link">Failure Points</a>
+        <a href="fun-usecases.html" class="nav-link">Fun</a>
+        <a href="industry-usecases.html" class="nav-link">Industry</a>
+        <a href="guide.html" class="nav-link">Guide</a>
+      </nav>
+      <button type="button" class="btn btn-ghost text-xs" data-theme-toggle onclick="slmToggleTheme()">Dark mode</button>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <section class="container-wide pt-10 pb-6">
+    <div class="max-w-3xl">
+      <span class="eyebrow">Industry use cases</span>
+      <h1 class="hero-tagline mt-2">
+        Two production-serious use cases<br>
+        <span style="color: var(--color-primary);">that a 135M model actually delivers on.</span>
+      </h1>
+      <p class="mt-4 text-slate-600 dark:text-slate-300 text-lg leading-relaxed">
+        Not toy examples. Real problems &mdash; agentic tool calling and privacy-preserving clinical
+        summarization &mdash; where a small fine-tuned model beats a cloud API on cost, latency, and privacy
+        for the specific task it was trained on. Also where the tutorial gets serious about safety.
+      </p>
+      <div class="mt-4 flex flex-wrap gap-2 text-sm">
+        <a href="#tool-calling" class="btn btn-outline text-xs">Agentic tool calling</a>
+        <a href="#clinical" class="btn btn-outline text-xs">Clinical summarizer</a>
       </div>
     </div>
-  </nav>
-  <main class="max-w-4xl mx-auto px-6 py-12">
-    <h1 class="text-3xl font-bold mb-6">industry usecases</h1>
-    <p class="text-gray-500">🚧 Under development</p>
-  </main>
-  <script src="js/main.js"></script>
+  </section>
+
+  <!-- ============================================
+       USE CASE 1: Agentic Tool Calling
+       ============================================ -->
+  <section class="container-wide py-10 showcase-section" id="tool-calling">
+    <div class="flex flex-wrap items-start justify-between gap-4">
+      <div>
+        <span class="eyebrow">Notebook 17 &middot; Industry use case</span>
+        <h2 class="text-3xl font-bold mt-1 tracking-tight">Agentic Tool-Calling SLM</h2>
+        <p class="mt-2 max-w-2xl text-slate-600 dark:text-slate-300">
+          Fine-tune a 135M model to emit structured JSON tool calls. Route natural-language queries into one of
+          six tool schemas. From 10% JSON validity to 95%. Roughly 30,000&times; cheaper per call than GPT-4.
+        </p>
+      </div>
+      <div class="flex flex-col items-end gap-2 shrink-0">
+        <a href="https://github.com/kumarjit88/finetuning-slm/blob/main/notebooks/17_industry_agentic_tool_calling.ipynb" target="_blank" rel="noopener" class="btn btn-primary text-sm">Open the notebook</a>
+        <div class="flex gap-1.5 flex-wrap justify-end">
+          <span class="badge badge-primary">LoRA</span>
+          <span class="badge badge-success">JSON output</span>
+          <span class="badge badge-neutral">60 examples</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+      <div class="kpi-card">
+        <div class="kpi-number blue">10<span class="text-2xl text-slate-400">&#8594;</span>95%</div>
+        <div class="kpi-label">JSON validity</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-number green">0<span class="text-2xl text-slate-400">&#8594;</span>65%</div>
+        <div class="kpi-label">Tool name accuracy</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-number purple">100%</div>
+        <div class="kpi-label">6-step workflow routing</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-number orange">30,000&times;</div>
+        <div class="kpi-label">Cheaper than GPT-4</div>
+      </div>
+    </div>
+
+    <!-- Architecture -->
+    <h3 class="section-heading">Architecture</h3>
+    <div class="card p-6">
+      <pre class="mermaid">
+graph LR
+  U([User query<br>&quot;What&apos;s the weather in Rome?&quot;]) --> M{Fine-tuned<br>135M SLM<br>with LoRA}
+  M -->|Valid JSON tool call| J["{tool: get_weather,<br>arguments: {city: Rome, date: today}}"]
+  J --> R{Tool router<br>schema validator}
+  R -->|Valid| T1[get_weather API]
+  R -->|Valid| T2[calculate]
+  R -->|Valid| T3[create_calendar_event]
+  R -->|Valid| T4[search_kb]
+  R -->|Valid| T5[send_notification]
+  R -->|Valid| T6[get_stock_price]
+  R -->|Ambiguous / unsafe| REF[refuse tool<br>returns reason]
+
+  classDef model fill:#eff6ff,stroke:#3b82f6,color:#0f172a,font-weight:bold
+  classDef tool fill:#dcfce7,stroke:#10b981,color:#0f172a
+  classDef refuse fill:#fef2f2,stroke:#ef4444,color:#0f172a
+  class M model
+  class T1,T2,T3,T4,T5,T6 tool
+  class REF refuse
+      </pre>
+    </div>
+
+    <!-- Business value + Safety story -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
+      <div>
+        <h3 class="section-heading">Business value</h3>
+        <div class="card">
+          <div class="value-item">
+            <div class="num">1</div>
+            <div>
+              <div class="font-semibold">Latency</div>
+              <div class="text-sm text-slate-500">467ms on M4 Max, sub-50ms on dedicated inference hardware. Cloud APIs typically 500-2000ms including network round-trip.</div>
+            </div>
+          </div>
+          <div class="value-item">
+            <div class="num">2</div>
+            <div>
+              <div class="font-semibold">Cost</div>
+              <div class="text-sm text-slate-500">$0 per call on local hardware. GPT-4 API is roughly $0.03 per call. At 1M calls/year, that&#39;s $30,000 vs about $1 of electricity.</div>
+            </div>
+          </div>
+          <div class="value-item">
+            <div class="num">3</div>
+            <div>
+              <div class="font-semibold">Privacy</div>
+              <div class="text-sm text-slate-500">Query text never leaves the device. No PII sent to third parties. No BAA required.</div>
+            </div>
+          </div>
+          <div class="value-item">
+            <div class="num">4</div>
+            <div>
+              <div class="font-semibold">Offline capability</div>
+              <div class="text-sm text-slate-500">Works without network connectivity. Critical for edge deployments, air-gapped environments, and reliability.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <h3 class="section-heading">Safety story</h3>
+        <div class="safety-callout">
+          <strong>The dangerous failure mode:</strong> a tool-calling model that guesses parameter values when
+          the query is ambiguous or unsafe. &ldquo;Clean up old records&rdquo; could become
+          <code>delete_database(table=&quot;users&quot;)</code> in a hurry.
+        </div>
+
+        <p class="text-sm mt-3">
+          The notebook adds a <code>refuse</code> pseudo-tool. Any ambiguous or destructive query should route
+          there instead of guessing. Refusal rate on 6 adversarial inputs after training: 0% (honest finding).
+          Six refusal examples in the training set were not enough. Reliable refusal needs either 30%+ refusal
+          examples or a DPO alignment stage afterward. This is reported openly in the notebook.
+        </p>
+
+        <div class="mt-4">
+          <a class="btn btn-outline text-sm" href="safety.html">See the full safety framework</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Deployment -->
+    <h3 class="section-heading">Deployment considerations</h3>
+    <div class="overflow-x-auto">
+      <table class="table-clean card p-0">
+        <thead>
+          <tr>
+            <th>Target</th>
+            <th>Format</th>
+            <th>Framework</th>
+            <th>Best for</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Server (Mac)</td>
+            <td>Safetensors</td>
+            <td>mlx-lm serve</td>
+            <td>Internal APIs, batch pipelines</td>
+          </tr>
+          <tr>
+            <td>Server (Linux GPU)</td>
+            <td>Safetensors</td>
+            <td>vLLM or TGI</td>
+            <td>High-throughput production</td>
+          </tr>
+          <tr>
+            <td>Edge (Raspberry Pi, phone)</td>
+            <td>GGUF (Q4_K_M)</td>
+            <td>llama.cpp</td>
+            <td>On-device agents, air-gapped</td>
+          </tr>
+          <tr>
+            <td>iOS / macOS app</td>
+            <td>Core ML</td>
+            <td>coremltools</td>
+            <td>Native mobile integration</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Results -->
+    <h3 class="section-heading">Results</h3>
+    <figure class="result-figure">
+      <img src="images/notebooks/tool_calling_analysis.png" alt="Chart from notebook 17 showing tool-calling JSON validity, tool name accuracy, and refusal rate" loading="lazy">
+      <figcaption>Notebook 17 &mdash; JSON validity 10% to 95%. Tool name accuracy 0% to 65%. Six-step workflow routing 100%.</figcaption>
+    </figure>
+  </section>
+
+  <!-- ============================================
+       ROI Calculator
+       ============================================ -->
+  <section class="py-10 showcase-section" style="background: var(--color-bg-alt);">
+    <div class="container-wide">
+      <h2 class="section-heading">ROI calculator: local SLM vs GPT-4 API</h2>
+      <p class="text-slate-600 dark:text-slate-300 mb-4 max-w-3xl">
+        Enter your call volume. See what a year of tool calling costs on GPT-4 vs a fine-tuned 135M model
+        served locally. The break-even for hardware costs is measured in weeks, not months.
+      </p>
+      <div class="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
+        <div class="card space-y-4">
+          <div>
+            <div class="text-xs uppercase tracking-widest text-slate-500">Tool calls per month</div>
+            <input type="range" min="1000" max="10000000" step="1000" value="100000" id="calls-slider" class="filter-slider w-full mt-2">
+            <div class="text-lg font-semibold mt-1"><span id="calls-label">100,000</span> calls / month</div>
+          </div>
+          <div>
+            <div class="text-xs uppercase tracking-widest text-slate-500">Average tokens per call</div>
+            <input type="range" min="50" max="2000" step="50" value="500" id="tokens-slider" class="filter-slider w-full mt-2">
+            <div class="text-lg font-semibold mt-1"><span id="tokens-label">500</span> tokens / call</div>
+          </div>
+          <div class="pt-3 border-t border-slate-200 dark:border-slate-700 space-y-2">
+            <div class="text-xs uppercase tracking-widest text-slate-500">Estimated annual cost</div>
+            <div class="text-sm flex justify-between">
+              <span>GPT-4 API</span>
+              <span class="font-semibold" style="color: var(--color-danger);">$<span id="gpt4-cost">0</span></span>
+            </div>
+            <div class="text-sm flex justify-between">
+              <span>GPT-3.5 API</span>
+              <span class="font-semibold" style="color: var(--color-warning);">$<span id="gpt35-cost">0</span></span>
+            </div>
+            <div class="text-sm flex justify-between">
+              <span>Local 135M SLM</span>
+              <span class="font-semibold" style="color: var(--color-success);">$<span id="local-cost">0</span></span>
+            </div>
+          </div>
+          <div class="text-xs text-slate-500 mt-2">
+            Assumes GPT-4 at $0.03/1K tokens, GPT-3.5 at $0.002/1K, local at electricity cost only.
+          </div>
+        </div>
+        <div class="chart-wrap" style="height: 420px;">
+          <canvas id="roi-chart" aria-label="Bar chart comparing annual API cost vs local fine-tuned SLM"></canvas>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================
+       USE CASE 2: Clinical Summarizer
+       ============================================ -->
+  <section class="container-wide py-10 showcase-section" id="clinical">
+    <div class="flex flex-wrap items-start justify-between gap-4">
+      <div>
+        <span class="eyebrow">Notebook 18 &middot; Industry use case</span>
+        <h2 class="text-3xl font-bold mt-1 tracking-tight">Privacy-Preserving Clinical Summarizer</h2>
+        <p class="mt-2 max-w-2xl text-slate-600 dark:text-slate-300">
+          Two-stage training. SFT installs a four-section clinical summary format. DPO reduces hallucination by
+          preferring grounded summaries over fabricated ones. Runs entirely on-device. Zero patient data leaves
+          the machine.
+        </p>
+      </div>
+      <div class="flex flex-col items-end gap-2 shrink-0">
+        <a href="https://github.com/kumarjit88/finetuning-slm/blob/main/notebooks/18_industry_privacy_preserving_clinical_summarizer.ipynb" target="_blank" rel="noopener" class="btn btn-primary text-sm">Open the notebook</a>
+        <div class="flex gap-1.5 flex-wrap justify-end">
+          <span class="badge badge-accent">SFT + DPO</span>
+          <span class="badge badge-success">On-device</span>
+          <span class="badge badge-primary">HIPAA-compatible</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+      <div class="kpi-card">
+        <div class="kpi-number blue">58<span class="text-2xl text-slate-400">&#8594;</span>75%</div>
+        <div class="kpi-label">Fact coverage</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-number green">18<span class="text-2xl text-slate-400">&#8594;</span>4%</div>
+        <div class="kpi-label">Hallucination rate</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-number purple">0.53</div>
+        <div class="kpi-label">DPO loss (&lt; log 2)</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-number orange">0</div>
+        <div class="kpi-label">Network calls at inference</div>
+      </div>
+    </div>
+
+    <!-- Architecture -->
+    <h3 class="section-heading">Privacy-by-architecture</h3>
+    <div class="card p-6">
+      <pre class="mermaid">
+graph LR
+  N([Clinical note<br>on hospital workstation]) --> D{On-device<br>135M SLM<br>SFT + DPO}
+  D --> S[Structured summary<br>Chief Complaint / Findings /<br>Assessment / Plan]
+  S --> W([Displayed to clinician<br>in EHR interface])
+
+  X[Third-party APIs] -.-> BLOCK[NO NETWORK CALLS<br>Zero data egress]
+  BLOCK -.-> X
+
+  classDef data fill:#eff6ff,stroke:#3b82f6,color:#0f172a
+  classDef model fill:#f5f3ff,stroke:#8b5cf6,color:#0f172a,font-weight:bold
+  classDef output fill:#dcfce7,stroke:#10b981,color:#0f172a
+  classDef blocked fill:#fef2f2,stroke:#ef4444,color:#0f172a,font-weight:bold
+  class N,S data
+  class D model
+  class W output
+  class X,BLOCK blocked
+      </pre>
+    </div>
+
+    <!-- Business value + Safety -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
+      <div>
+        <h3 class="section-heading">Why privacy-by-architecture matters</h3>
+        <div class="card">
+          <div class="value-item">
+            <div class="num">1</div>
+            <div>
+              <div class="font-semibold">HIPAA-compatible by design</div>
+              <div class="text-sm text-slate-500">PHI never leaves the device. No BAA required with a third-party inference provider. The machine itself is the compliance boundary.</div>
+            </div>
+          </div>
+          <div class="value-item">
+            <div class="num">2</div>
+            <div>
+              <div class="font-semibold">GDPR / regional residency</div>
+              <div class="text-sm text-slate-500">Data does not cross borders because it does not cross the LAN. Solves the entire class of &ldquo;which country&#39;s cloud region is this in&rdquo; problems.</div>
+            </div>
+          </div>
+          <div class="value-item">
+            <div class="num">3</div>
+            <div>
+              <div class="font-semibold">Zero-trust deployment</div>
+              <div class="text-sm text-slate-500">Verifiable via network monitor: the model is offline during inference. This is auditable in a way that trusting a vendor&#39;s data-handling policy is not.</div>
+            </div>
+          </div>
+          <div class="value-item">
+            <div class="num">4</div>
+            <div>
+              <div class="font-semibold">Cost per summary: essentially zero</div>
+              <div class="text-sm text-slate-500">1.7 seconds per note on M4 Max. Model uses 545 MB of memory. A single hospital workstation can serve dozens of clinicians.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <h3 class="section-heading">Safety story</h3>
+        <div class="safety-callout">
+          <strong>The dangerous failure mode:</strong> hallucinated medications, wrong dosages, fabricated lab
+          values, or invented diagnoses in a summary a clinician will act on. This is patient harm territory.
+        </div>
+
+        <p class="text-sm mt-3">
+          The DPO stage specifically targets hallucination. Preference pairs where &ldquo;chosen&rdquo; summaries only
+          state facts present in the source note, and &ldquo;rejected&rdquo; summaries contain a fabricated element.
+          Hallucination rate dropped from 18% to 4%. DPO loss reached 0.53, well below the log 2 threshold.
+        </p>
+
+        <p class="text-sm mt-3">
+          Additional guardrails documented in the notebook: (1) always show the source note next to the
+          summary; (2) require clinician sign-off before the summary enters the record; (3) log every
+          generation for post-hoc review; (4) never let the model produce medical advice, only summarize
+          existing content.
+        </p>
+
+        <div class="mt-4">
+          <a class="btn btn-outline text-sm" href="safety.html">Full safety framework</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Data governance -->
+    <h3 class="section-heading">Data governance statement</h3>
+    <div class="card">
+      <p class="text-sm text-slate-600 dark:text-slate-300">
+        The notebook uses <strong>entirely synthetic clinical notes</strong>. No real patient data was used at
+        any point. Notes were composed manually using public clinical documentation templates. Twenty notes
+        cover four specialties (cardiology, pulmonology, endocrinology, orthopedics). Every fact in a note has
+        an explicit ground-truth list used for measuring hallucination. No SNOMED CT, ICD-10, or other
+        licensed terminology is reproduced verbatim.
+      </p>
+      <p class="text-sm text-slate-500 mt-3">
+        Reproducing this on your own patient data requires an IRB review, a data-use agreement, and someone
+        signing off that the training set does not itself contain PHI that could leak into outputs.
+      </p>
+    </div>
+
+    <!-- Results -->
+    <h3 class="section-heading">Results</h3>
+    <figure class="result-figure">
+      <img src="images/notebooks/clinical_summarizer_analysis.png" alt="Chart from notebook 18 showing fact coverage, hallucination rate, and completeness across base / SFT / DPO stages" loading="lazy">
+      <figcaption>Notebook 18 &mdash; SFT installed the format (coverage +29%). DPO reduced hallucination 78% (18% to 4%).</figcaption>
+    </figure>
+  </section>
+
+  <!-- Bottom line -->
+  <section class="container-wide py-10">
+    <blockquote class="callout max-w-3xl">
+      <span class="callout-label">The bottom line</span>
+      For narrow, structured tasks &mdash; tool calling, structured summarization, classification &mdash; a
+      fine-tuned small model beats a general-purpose cloud API on cost, latency, and privacy simultaneously.
+      For open-ended reasoning, the cloud API still wins. Know which side of that line your task is on before
+      you start.
+    </blockquote>
+  </section>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="container-wide flex flex-wrap items-center justify-between gap-3">
+      <div>Fine-tuning small language models without losing your mind (or your GPU).</div>
+      <nav class="flex gap-4 text-xs">
+        <a class="nav-link" href="fun-usecases.html">Fun</a>
+        <a class="nav-link" href="safety.html">Safety</a>
+        <a class="nav-link" href="guide.html">Guide</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script>
+    // ---- ROI calculator ----
+    const callsSlider = document.getElementById('calls-slider');
+    const tokensSlider = document.getElementById('tokens-slider');
+    const callsLabel = document.getElementById('calls-label');
+    const tokensLabel = document.getElementById('tokens-label');
+
+    function textColor() {
+      return document.documentElement.getAttribute('data-theme') === 'dark' ? '#cbd5e1' : '#334155';
+    }
+    function gridColor() {
+      return document.documentElement.getAttribute('data-theme') === 'dark' ? '#1e293b' : '#e2e8f0';
+    }
+
+    let roiChart;
+    function computeCosts() {
+      const calls = parseInt(callsSlider.value, 10);
+      const tokens = parseInt(tokensSlider.value, 10);
+      callsLabel.textContent = calls.toLocaleString();
+      tokensLabel.textContent = tokens.toLocaleString();
+
+      const yearly = calls * 12;
+      const tokensPerYear = yearly * tokens;
+
+      // Rough pricing (public list prices as of late 2024)
+      const gpt4  = (tokensPerYear / 1000) * 0.03;
+      const gpt35 = (tokensPerYear / 1000) * 0.002;
+      const local = 0.5;                              // electricity, roughly
+
+      document.getElementById('gpt4-cost').textContent = Math.round(gpt4).toLocaleString();
+      document.getElementById('gpt35-cost').textContent = Math.round(gpt35).toLocaleString();
+      document.getElementById('local-cost').textContent = local.toLocaleString();
+
+      updateRoiChart({ gpt4, gpt35, local });
+    }
+
+    function buildRoi() {
+      const ctx = document.getElementById('roi-chart').getContext('2d');
+      roiChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ['GPT-4 API', 'GPT-3.5 API', 'Local 135M SLM'],
+          datasets: [{
+            label: 'Annual cost (USD)',
+            data: [0, 0, 0],
+            backgroundColor: ['#ef4444', '#f59e0b', '#10b981'],
+            borderRadius: 8
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: {
+            title: { display: true, text: 'Annual cost by inference provider', color: textColor(), font: { size: 13, weight: 'bold' } },
+            legend: { display: false },
+            tooltip: { callbacks: { label: c => '$' + Math.round(c.parsed.y).toLocaleString() } }
+          },
+          scales: {
+            x: { ticks: { color: textColor() }, grid: { color: gridColor() } },
+            y: {
+              type: 'logarithmic',
+              title: { display: true, text: 'USD (log scale)', color: textColor() },
+              ticks: { color: textColor(), callback: v => '$' + Number(v).toLocaleString() },
+              grid: { color: gridColor() }
+            }
+          }
+        }
+      });
+    }
+
+    function updateRoiChart(costs) {
+      if (!roiChart) return;
+      roiChart.data.datasets[0].data = [Math.max(costs.gpt4, 0.01), Math.max(costs.gpt35, 0.01), Math.max(costs.local, 0.01)];
+      roiChart.update('none');
+    }
+
+    callsSlider.addEventListener('input', computeCosts);
+    tokensSlider.addEventListener('input', computeCosts);
+
+    document.addEventListener('DOMContentLoaded', () => {
+      function tryStart() {
+        if (typeof Chart === 'undefined') { setTimeout(tryStart, 30); return; }
+        buildRoi();
+        computeCosts();
+      }
+      tryStart();
+    });
+  </script>
 </body>
 </html>

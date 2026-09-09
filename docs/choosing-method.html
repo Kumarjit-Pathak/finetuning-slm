@@ -3,383 +3,527 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Choosing a Method & Dataset Design — SLM Fine-Tuning Tutorial</title>
-  <meta name="description" content="How to choose a fine-tuning method and design datasets that actually work. The most underrated skill in fine-tuning, explained like a friend over coffee.">
+  <title>Which Method? — Fine-Tuning Small Language Models</title>
+  <meta name="description" content="A decision guide for picking a fine-tuning technique. Interactive flowchart, 4-question recommender wizard, and task cards mapped to techniques.">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&family=Lora:ital,wght@1,500&display=swap" rel="stylesheet">
+
+  <!-- Tailwind -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      darkMode: ['selector', '[data-theme="dark"]'],
-    }
-  </script>
+  <script>tailwind.config = { darkMode: ['selector', '[data-theme="dark"]'] };</script>
+
+  <!-- Mermaid -->
+  <script defer src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+
+  <!-- Local -->
   <link rel="stylesheet" href="css/style.css">
+  <script defer src="js/main.js"></script>
+
+  <style>
+    /* Wizard-only styles */
+    .wizard-step { display: none; }
+    .wizard-step.active { display: block; animation: fadein .2s ease; }
+    .wizard-option {
+      display: block;
+      width: 100%;
+      padding: 1rem 1.25rem;
+      text-align: left;
+      background: var(--color-bg-alt);
+      border: 1px solid var(--color-border);
+      border-radius: .75rem;
+      cursor: pointer;
+      transition: all .15s;
+      color: var(--color-text);
+    }
+    .wizard-option:hover {
+      border-color: var(--color-primary);
+      transform: translateX(3px);
+    }
+    .wizard-option .label {
+      font-weight: 600;
+      display: block;
+      margin-bottom: .2rem;
+    }
+    .wizard-option .desc {
+      font-size: .85rem;
+      color: var(--color-text-muted);
+    }
+    .wizard-progress {
+      display: flex;
+      gap: .3rem;
+      margin-bottom: 1.25rem;
+    }
+    .wizard-progress > div {
+      height: 4px;
+      flex: 1;
+      background: var(--color-border);
+      border-radius: 2px;
+      transition: background .2s;
+    }
+    .wizard-progress > div.done { background: var(--color-primary); }
+
+    .task-card {
+      padding: 1.25rem;
+      background: var(--color-bg-alt);
+      border: 1px solid var(--color-border);
+      border-radius: .75rem;
+      cursor: pointer;
+      transition: transform .15s, box-shadow .15s, border-color .15s;
+    }
+    .task-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--color-primary);
+      box-shadow: 0 10px 25px rgba(15,23,42,.08);
+    }
+    .task-card .task-title { font-weight: 600; font-size: 1rem; }
+    .task-card .task-answer {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height .25s ease;
+    }
+    .task-card.revealed .task-answer {
+      max-height: 400px;
+      margin-top: .75rem;
+      padding-top: .75rem;
+      border-top: 1px solid var(--color-border);
+    }
+    .task-card .task-hint {
+      font-size: .75rem;
+      color: var(--color-primary);
+      margin-top: .35rem;
+    }
+    .task-card.revealed .task-hint { display: none; }
+
+    /* Verdict card */
+    .verdict {
+      background: linear-gradient(135deg, rgba(59,130,246,.1), rgba(139,92,246,.1));
+      border: 2px solid var(--color-primary);
+      border-radius: 1rem;
+      padding: 2rem;
+    }
+    .verdict-technique {
+      font-size: 2.25rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--color-primary);
+    }
+  </style>
 </head>
-<body class="min-h-screen bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 transition-colors">
 
-  <!-- Navigation -->
-  <nav class="bg-gray-900 text-white py-3 px-6 sticky top-0 z-50 shadow-lg">
-    <div class="max-w-6xl mx-auto flex justify-between items-center">
-      <a href="index.html" class="font-bold text-lg">SLM Fine-Tuning</a>
-      <div class="hidden md:flex gap-4 text-sm">
-        <a href="techniques.html" class="hover:text-blue-300 transition-colors">Techniques</a>
-        <a href="comparison.html" class="hover:text-blue-300 transition-colors">Compare</a>
-        <a href="choosing-method.html" class="text-blue-300 font-semibold">Which Method?</a>
-        <a href="safety.html" class="hover:text-blue-300 transition-colors">Safety</a>
-        <a href="guide.html" class="hover:text-blue-300 transition-colors">Guide</a>
-      </div>
-      <button onclick="toggleDarkMode()" class="text-sm bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded-md transition-colors" aria-label="Toggle dark mode">
-        🌓
-      </button>
-    </div>
-  </nav>
+<body class="antialiased">
 
-  <!-- Hero Section -->
-  <!-- humanized -->
-  <header class="bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 text-white py-20">
-    <div class="max-w-4xl mx-auto px-6 text-center">
-      <p class="text-blue-200 text-sm font-semibold uppercase tracking-wide mb-3">The Skill Nobody Talks About</p>
-      <h1 class="text-4xl md:text-5xl font-bold mb-6 leading-tight">
-        Dataset Design:<br class="hidden sm:block"> The Make-or-Break of Fine-Tuning
-      </h1>
-      <p class="text-xl md:text-2xl opacity-90 max-w-2xl mx-auto leading-relaxed">
-        Your model is only as good as the data you feed it. A perfect training recipe with garbage data produces… expensive garbage. And trust me, nobody wants to explain to their manager that they burned $200 in GPU time to teach a model nonsense.
-      </p>
-      <p class="mt-6 text-blue-200 text-base italic">
-        "Fine-tuning without dataset design is like giving Gordon Ramsay gas-station ingredients and expecting a Michelin star. He'd flip the table — and so will your loss curve."
-      </p>
+  <!-- Nav -->
+  <header class="nav-shell sticky top-0 z-40">
+    <div class="container-wide flex items-center justify-between py-3">
+      <a href="index.html" class="font-bold tracking-tight text-lg" style="color: var(--color-text);">
+        Fine-Tuning SLMs
+      </a>
+      <nav class="hidden md:flex items-center gap-6 text-sm font-medium">
+        <a href="index.html" class="nav-link">Home</a>
+        <a href="techniques.html" class="nav-link">Techniques</a>
+        <a href="comparison.html" class="nav-link">Comparison</a>
+        <a href="choosing-method.html" class="nav-link">Which Method?</a>
+        <a href="safety.html" class="nav-link">Safety</a>
+        <a href="failure-points.html" class="nav-link">Failure Points</a>
+        <a href="fun-usecases.html" class="nav-link">Fun</a>
+        <a href="industry-usecases.html" class="nav-link">Industry</a>
+        <a href="guide.html" class="nav-link">Guide</a>
+      </nav>
+      <button type="button" class="btn btn-ghost text-xs" data-theme-toggle onclick="slmToggleTheme()">Dark mode</button>
     </div>
   </header>
 
-  <main class="max-w-4xl mx-auto px-6 py-16 space-y-20">
+  <!-- Hero -->
+  <section class="container-wide pt-10 pb-6">
+    <div class="max-w-3xl">
+      <span class="eyebrow">Decision guide</span>
+      <h1 class="hero-tagline mt-2">
+        Which fine-tuning technique should I use?<br>
+        <span style="color: var(--color-primary);">Four questions later, you will know.</span>
+      </h1>
+      <p class="mt-4 text-slate-600 dark:text-slate-300 text-lg leading-relaxed">
+        A recommender that asks four questions and picks a technique. A flowchart if you prefer to see
+        the branches. And a dozen real tasks with the &ldquo;actually, use this&rdquo; answer already worked out.
+      </p>
+    </div>
+  </section>
 
-    <!-- Page TOC -->
-    <nav class="bg-slate-50 dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700" aria-label="Page contents">
-      <h2 class="font-bold text-lg mb-3">On this page</h2>
-      <ol class="list-decimal list-inside space-y-1 text-sm text-slate-600 dark:text-slate-300">
-        <li><a href="#objective-data" class="hover:text-blue-600 dark:hover:text-blue-400">Objective → Data Requirements</a></li>
-        <li><a href="#how-much-data" class="hover:text-blue-600 dark:hover:text-blue-400">How Much Data Do You Need?</a></li>
-        <li><a href="#quality-over-quantity" class="hover:text-blue-600 dark:hover:text-blue-400">Data Quality > Data Quantity</a></li>
-        <li><a href="#pipeline" class="hover:text-blue-600 dark:hover:text-blue-400">The Dataset Construction Pipeline</a></li>
-        <li><a href="#try-it" class="hover:text-blue-600 dark:hover:text-blue-400">Try It Yourself</a></li>
+  <!-- Recommender wizard -->
+  <section class="container-wide py-6">
+    <h2 class="section-heading">The 4-question recommender</h2>
+    <div class="card max-w-3xl">
+      <div class="wizard-progress">
+        <div class="done" id="wp1"></div>
+        <div id="wp2"></div>
+        <div id="wp3"></div>
+        <div id="wp4"></div>
+      </div>
+
+      <!-- Q1: VRAM budget -->
+      <div class="wizard-step active" data-step="1">
+        <div class="text-xs uppercase tracking-widest text-slate-500">Question 1 of 4</div>
+        <h3 class="text-xl font-bold mt-1">How much VRAM (or unified memory) do you have?</h3>
+        <p class="text-sm text-slate-500 mt-1">If you don&#39;t know, pick 8 GB. That covers most consumer laptops.</p>
+        <div class="grid gap-3 mt-4">
+          <button class="wizard-option" onclick="pick('vram','tight')"><span class="label">Under 8 GB</span><span class="desc">A modest laptop, or a shared Colab session.</span></button>
+          <button class="wizard-option" onclick="pick('vram','mid')"><span class="label">8 to 24 GB</span><span class="desc">A dedicated GPU or a decent Apple Silicon machine.</span></button>
+          <button class="wizard-option" onclick="pick('vram','plenty')"><span class="label">More than 24 GB</span><span class="desc">A workstation GPU or a cloud rental.</span></button>
+        </div>
+      </div>
+
+      <!-- Q2: Goal -->
+      <div class="wizard-step" data-step="2">
+        <div class="text-xs uppercase tracking-widest text-slate-500">Question 2 of 4</div>
+        <h3 class="text-xl font-bold mt-1">What are you trying to achieve?</h3>
+        <p class="text-sm text-slate-500 mt-1">Be honest. Different goals go to different techniques.</p>
+        <div class="grid gap-3 mt-4">
+          <button class="wizard-option" onclick="pick('goal','capability')"><span class="label">Teach a new task or format</span><span class="desc">Structured output, classification, domain vocabulary, a new template.</span></button>
+          <button class="wizard-option" onclick="pick('goal','alignment')"><span class="label">Align behavior to a preference</span><span class="desc">Tone, style, refusal behavior, preferences between two candidate answers.</span></button>
+          <button class="wizard-option" onclick="pick('goal','compress')"><span class="label">Compress a bigger model</span><span class="desc">Get a smaller, faster model that still behaves like a larger one.</span></button>
+          <button class="wizard-option" onclick="pick('goal','combine')"><span class="label">Combine multiple fine-tunes</span><span class="desc">You already have two fine-tuned models and want to merge them.</span></button>
+        </div>
+      </div>
+
+      <!-- Q3: Data volume -->
+      <div class="wizard-step" data-step="3">
+        <div class="text-xs uppercase tracking-widest text-slate-500">Question 3 of 4</div>
+        <h3 class="text-xl font-bold mt-1">How much training data do you have?</h3>
+        <p class="text-sm text-slate-500 mt-1">Count useful, labeled examples. Not tokens. Not scraped web pages.</p>
+        <div class="grid gap-3 mt-4">
+          <button class="wizard-option" onclick="pick('data','tiny')"><span class="label">Fewer than 100 examples</span><span class="desc">Small enough to write by hand. Prompt engineering may still beat fine-tuning.</span></button>
+          <button class="wizard-option" onclick="pick('data','small')"><span class="label">100 to 1,000 examples</span><span class="desc">The sweet spot for PEFT. Enough signal, not enough to memorize.</span></button>
+          <button class="wizard-option" onclick="pick('data','big')"><span class="label">More than 1,000 examples</span><span class="desc">You have room to do something more ambitious.</span></button>
+        </div>
+      </div>
+
+      <!-- Q4: Deployment -->
+      <div class="wizard-step" data-step="4">
+        <div class="text-xs uppercase tracking-widest text-slate-500">Question 4 of 4</div>
+        <h3 class="text-xl font-bold mt-1">Where will this model run in production?</h3>
+        <p class="text-sm text-slate-500 mt-1">This affects how you package the fine-tune.</p>
+        <div class="grid gap-3 mt-4">
+          <button class="wizard-option" onclick="pick('deploy','edge')"><span class="label">On-device or edge</span><span class="desc">A phone, a laptop, a Raspberry Pi. Latency and size matter.</span></button>
+          <button class="wizard-option" onclick="pick('deploy','cloud')"><span class="label">Cloud inference</span><span class="desc">Behind an API. Latency matters, size less so.</span></button>
+          <button class="wizard-option" onclick="pick('deploy','research')"><span class="label">Just running experiments</span><span class="desc">No production plans yet. Optimize for iteration speed.</span></button>
+        </div>
+      </div>
+
+      <!-- Result -->
+      <div class="wizard-step" data-step="5">
+        <div class="text-xs uppercase tracking-widest text-slate-500">Recommendation</div>
+        <div class="verdict mt-3">
+          <div class="text-sm text-slate-500 uppercase tracking-widest">Best fit for you</div>
+          <div class="verdict-technique" id="verdict-name">LoRA</div>
+          <p class="mt-3 text-slate-600 dark:text-slate-300" id="verdict-reason">
+            Low-rank adapters give you almost all of the quality of full fine-tuning at a fraction of the memory and compute cost. That covers most cases.
+          </p>
+          <div class="mt-4 flex gap-3 flex-wrap">
+            <a class="btn btn-primary" id="verdict-link" href="techniques.html#lora">See the LoRA deep-dive</a>
+            <button class="btn btn-outline" onclick="resetWizard()">Start over</button>
+          </div>
+        </div>
+
+        <div class="mt-6 text-sm text-slate-600 dark:text-slate-300">
+          <div class="font-semibold mb-1">Also worth a look:</div>
+          <ul id="verdict-runners-up" class="list-disc pl-6 space-y-1"></ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Task cards -->
+  <section class="container-wide py-10">
+    <h2 class="section-heading">If your task looks like this, use this</h2>
+    <p class="text-slate-600 dark:text-slate-300 mb-4 max-w-3xl">
+      Twelve tasks we have actually seen. Click each to reveal the recommended technique and the reason.
+      No wizard required.
+    </p>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
+      <div class="task-card" onclick="this.classList.toggle('revealed')">
+        <div class="task-title">Build a customer-support chatbot for one product</div>
+        <div class="task-hint">Click to see the answer</div>
+        <div class="task-answer text-sm text-slate-600 dark:text-slate-300">
+          <div><strong style="color: var(--color-primary);">Use LoRA.</strong></div>
+          You are teaching a narrow domain, not new reasoning. LoRA on 500–2000 labeled Q&amp;A pairs will get you 80% of the way there. Ship the adapter, keep the base swappable.
+        </div>
+      </div>
+
+      <div class="task-card" onclick="this.classList.toggle('revealed')">
+        <div class="task-title">Emit reliable structured JSON tool calls</div>
+        <div class="task-hint">Click to see the answer</div>
+        <div class="task-answer text-sm text-slate-600 dark:text-slate-300">
+          <div><strong style="color: var(--color-primary);">Use LoRA (SFT for structured output).</strong></div>
+          The model already knows JSON. You are teaching routing and parameter extraction. Notebook 17 took a 135M model from 10% valid JSON to 95% with 60 training examples.
+        </div>
+      </div>
+
+      <div class="task-card" onclick="this.classList.toggle('revealed')">
+        <div class="task-title">Summarize clinical notes without hallucinating</div>
+        <div class="task-hint">Click to see the answer</div>
+        <div class="task-answer text-sm text-slate-600 dark:text-slate-300">
+          <div><strong style="color: var(--color-primary);">Use SFT then DPO.</strong></div>
+          SFT installs the four-section format. DPO reduces hallucination by preferring grounded summaries over fabricated ones. Notebook 18 dropped the hallucination rate from 18% to 4%.
+        </div>
+      </div>
+
+      <div class="task-card" onclick="this.classList.toggle('revealed')">
+        <div class="task-title">Make responses sound more like our brand voice</div>
+        <div class="task-hint">Click to see the answer</div>
+        <div class="task-answer text-sm text-slate-600 dark:text-slate-300">
+          <div><strong style="color: var(--color-primary);">Use DPO.</strong></div>
+          Style is a preference, not a capability. Give the model 100–300 pairs where you rank two candidate outputs. DPO does the rest.
+        </div>
+      </div>
+
+      <div class="task-card" onclick="this.classList.toggle('revealed')">
+        <div class="task-title">Fine-tune a 7B model on my 8 GB laptop</div>
+        <div class="task-hint">Click to see the answer</div>
+        <div class="task-answer text-sm text-slate-600 dark:text-slate-300">
+          <div><strong style="color: var(--color-primary);">Use QLoRA.</strong></div>
+          Load the base in 4-bit NF4, LoRA on top. This is exactly the scenario QLoRA was invented for. Notebook 05 walks through the memory math.
+        </div>
+      </div>
+
+      <div class="task-card" onclick="this.classList.toggle('revealed')">
+        <div class="task-title">Classify support tickets into 5 categories</div>
+        <div class="task-hint">Click to see the answer</div>
+        <div class="task-answer text-sm text-slate-600 dark:text-slate-300">
+          <div><strong style="color: var(--color-primary);">Try linear probing first.</strong></div>
+          If the base model already encodes the distinction in its hidden states, a classifier head is enough. If it doesn&#39;t, escalate to LoRA. Cheap experiment either way.
+        </div>
+      </div>
+
+      <div class="task-card" onclick="this.classList.toggle('revealed')">
+        <div class="task-title">Combine two domain-specific fine-tunes</div>
+        <div class="task-hint">Click to see the answer</div>
+        <div class="task-answer text-sm text-slate-600 dark:text-slate-300">
+          <div><strong style="color: var(--color-primary);">Use model merging.</strong></div>
+          SLERP, TIES, or DARE. Zero extra training. Zero extra data. Ten seconds of work. Sometimes it even outperforms both parents. Notebook 10.
+        </div>
+      </div>
+
+      <div class="task-card" onclick="this.classList.toggle('revealed')">
+        <div class="task-title">Ship a smaller model that behaves like our fine-tuned 7B</div>
+        <div class="task-hint">Click to see the answer</div>
+        <div class="task-answer text-sm text-slate-600 dark:text-slate-300">
+          <div><strong style="color: var(--color-primary);">Use knowledge distillation.</strong></div>
+          Teacher-student. The 7B labels a corpus, the smaller model imitates. Ship the smaller model. Notebook 09 shows the KD loss math.
+        </div>
+      </div>
+
+      <div class="task-card" onclick="this.classList.toggle('revealed')">
+        <div class="task-title">Add refusal behavior to an existing model</div>
+        <div class="task-hint">Click to see the answer</div>
+        <div class="task-answer text-sm text-slate-600 dark:text-slate-300">
+          <div><strong style="color: var(--color-primary);">Use DPO with refusal pairs.</strong></div>
+          Chosen = refusal on unsafe queries. Rejected = compliance. The safety notebook (12) walks through the failure modes and how DPO fixes them.
+        </div>
+      </div>
+
+      <div class="task-card" onclick="this.classList.toggle('revealed')">
+        <div class="task-title">Compare six candidate techniques on the same task</div>
+        <div class="task-hint">Click to see the answer</div>
+        <div class="task-answer text-sm text-slate-600 dark:text-slate-300">
+          <div><strong style="color: var(--color-primary);">Use LoRA for all six.</strong></div>
+          Same trainable-parameter budget, fair comparison, quick iteration. Notebook 13 does exactly this for the whole tutorial&#39;s benchmark table.
+        </div>
+      </div>
+
+      <div class="task-card" onclick="this.classList.toggle('revealed')">
+        <div class="task-title">Have less than 100 training examples</div>
+        <div class="task-hint">Click to see the answer</div>
+        <div class="task-answer text-sm text-slate-600 dark:text-slate-300">
+          <div><strong style="color: var(--color-primary);">Try prompt tuning first, or skip fine-tuning.</strong></div>
+          Below 100 examples, few-shot prompting often wins. If you must fine-tune, prompt tuning (20K params) rarely overfits. Notebook 06.
+        </div>
+      </div>
+
+      <div class="task-card" onclick="this.classList.toggle('revealed')">
+        <div class="task-title">Optimize for the last 1% of quality regardless of cost</div>
+        <div class="task-hint">Click to see the answer</div>
+        <div class="task-answer text-sm text-slate-600 dark:text-slate-300">
+          <div><strong style="color: var(--color-primary);">Full fine-tuning.</strong></div>
+          You have unlimited compute, a validated eval set, and stakeholders who care. This is what full fine-tuning is for. Notebook 02.
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Flowchart -->
+  <section class="container-wide py-10">
+    <h2 class="section-heading">The flowchart, if you prefer branches to buttons</h2>
+    <p class="text-slate-600 dark:text-slate-300 mb-4 max-w-3xl">
+      Same logic as the wizard, drawn as a graph. If you can trace a path from top to bottom, you have
+      picked a technique.
+    </p>
+    <div class="card p-6 overflow-x-auto">
+      <pre class="mermaid">
+graph TD
+  A([Start: I need to fine-tune]) --> B{VRAM budget?}
+  B -->|Under 8 GB| C{Base model size?}
+  B -->|8 to 24 GB| D{Goal?}
+  B -->|More than 24 GB| E{Quality vs cost?}
+  C -->|7B or larger| F[QLoRA]
+  C -->|Under 3B| G[LoRA]
+  D -->|Teach a task| G
+  D -->|Align tone or style| H[DPO]
+  D -->|Compress a bigger model| I[Distillation]
+  D -->|Combine fine-tunes| J[Model merging]
+  E -->|Max quality| K[Full fine-tuning]
+  E -->|Best value| G
+  E -->|Fastest iteration| G
+
+  classDef default fill:#eff6ff,stroke:#3b82f6,color:#0f172a
+  classDef choice fill:#f5f3ff,stroke:#8b5cf6,color:#0f172a
+  classDef win fill:#dcfce7,stroke:#10b981,color:#0f172a,font-weight:bold
+  class B,C,D,E choice
+  class F,G,H,I,J,K win
+      </pre>
+    </div>
+  </section>
+
+  <!-- Rules of thumb -->
+  <section class="container-wide py-10">
+    <div class="max-w-3xl">
+      <h2 class="section-heading">Rules of thumb, in the order you should try them</h2>
+      <ol class="list-decimal pl-6 text-slate-600 dark:text-slate-300 space-y-3">
+        <li><strong>Start with prompt engineering.</strong> If a well-crafted prompt works, you have just saved yourself a fine-tuning run and probably a debugging session.</li>
+        <li><strong>Fine-tune with LoRA first.</strong> It works surprisingly often. If it does not, at least you know your problem is a capacity problem and not a technique problem.</li>
+        <li><strong>Use QLoRA for anything bigger than 3B on consumer hardware.</strong> The 4-bit quantization is essentially free at 7B and up.</li>
+        <li><strong>Reach for DPO when the failure is preference, not capability.</strong> If the model can produce good outputs sometimes and bad outputs sometimes, DPO is the tool for &ldquo;prefer the good ones&rdquo;.</li>
+        <li><strong>Full fine-tune only when you have measured the ceiling.</strong> Full FT is expensive and usually only wins by a few points. Make sure those points matter.</li>
+        <li><strong>Model merging is a free lunch. Take it.</strong> If you already have two adapters, try merging them before training a third.</li>
       </ol>
-    </nav>
-
-    <!-- Section 1: Objective → Data Requirements -->
-    <!-- humanized -->
-    <section id="objective-data">
-      <h2 class="text-3xl font-bold mb-3 text-slate-900 dark:text-white">Objective → Data Requirements</h2>
-      <p class="text-lg text-slate-600 dark:text-slate-300 mb-6">
-        Before you collect a single example, ask: <strong>"What do I want my model to do differently after training?"</strong> The answer dictates everything — format, volume, sources. Think of it like packing for a trip: you wouldn't throw snowshoes in your bag for a beach vacation. (Well, unless your vacation is "debugging CUDA errors," which is its own kind of winter.) 🧳
-      </p>
-
-      <div class="grid gap-4 md:grid-cols-2">
-        <!-- Instruction Following -->
-        <!-- humanized -->
-        <div class="technique-card border-l-4 border-blue-500">
-          <h3 class="font-bold text-blue-600 dark:text-blue-400 mb-2">🎯 Instruction Following</h3>
-          <p class="text-sm text-slate-600 dark:text-slate-300 mb-2">
-            You want the model to actually <em>listen</em> when you tell it to do something. Revolutionary concept, I know.
-          </p>
-          <p class="text-sm font-medium">Data needed:</p>
-          <ul class="text-sm text-slate-500 dark:text-slate-400 list-disc list-inside">
-            <li>Diverse instruction-response pairs</li>
-            <li>Variety in task type (QA, summarization, coding, creative)</li>
-            <li>Multiple phrasings for similar intents</li>
-          </ul>
-        </div>
-
-        <!-- Domain Adaptation -->
-        <!-- humanized -->
-        <div class="technique-card border-l-4 border-purple-500">
-          <h3 class="font-bold text-purple-600 dark:text-purple-400 mb-2">🏥 Domain Adaptation</h3>
-          <p class="text-sm text-slate-600 dark:text-slate-300 mb-2">
-            You want the model to speak your industry's language fluently — like teaching our friend SmolLM2-135M to pass as a radiologist at a dinner party.
-          </p>
-          <p class="text-sm font-medium">Data needed:</p>
-          <ul class="text-sm text-slate-500 dark:text-slate-400 list-disc list-inside">
-            <li>Large volume of domain text (papers, docs, logs)</li>
-            <li>Continued pretraining format (raw text)</li>
-            <li>Domain-specific QA pairs for validation</li>
-          </ul>
-        </div>
-
-        <!-- Style Transfer -->
-        <div class="technique-card border-l-4 border-green-500">
-          <h3 class="font-bold text-green-600 dark:text-green-400 mb-2">✍️ Style Transfer</h3>
-          <p class="text-sm text-slate-600 dark:text-slate-300 mb-2">
-            You want the model to write in a specific voice or tone.
-          </p>
-          <p class="text-sm font-medium">Data needed:</p>
-          <ul class="text-sm text-slate-500 dark:text-slate-400 list-disc list-inside">
-            <li>Parallel examples: generic → styled rewrites</li>
-            <li>High-quality exemplars of the target voice</li>
-            <li>Negative examples of what to avoid</li>
-          </ul>
-        </div>
-
-        <!-- Alignment -->
-        <!-- humanized -->
-        <div class="technique-card border-l-4 border-orange-500">
-          <h3 class="font-bold text-orange-600 dark:text-orange-400 mb-2">⚖️ Alignment (RLHF/DPO)</h3>
-          <p class="text-sm text-slate-600 dark:text-slate-300 mb-2">
-            You want the model to prefer helpful, safe responses — basically teaching it manners. "Don't be chaotic evil" is the vibe here.
-          </p>
-          <p class="text-sm font-medium">Data needed:</p>
-          <ul class="text-sm text-slate-500 dark:text-slate-400 list-disc list-inside">
-            <li>Preference pairs: (chosen response, rejected response)</li>
-            <li>Consistent annotation guidelines</li>
-            <li>Coverage of edge cases and refusals</li>
-          </ul>
-        </div>
-
-        <!-- Tool-Calling -->
-        <!-- humanized -->
-        <div class="technique-card border-l-4 border-red-500 md:col-span-2">
-          <h3 class="font-bold text-red-600 dark:text-red-400 mb-2">🔧 Tool-Calling / Function-Calling</h3>
-          <p class="text-sm text-slate-600 dark:text-slate-300 mb-2">
-            You want the model to invoke APIs or tools with correct arguments — not just hallucinate a function that doesn't exist and call it with the confidence of a CEO reading a teleprompter.
-          </p>
-          <p class="text-sm font-medium">Data needed:</p>
-          <ul class="text-sm text-slate-500 dark:text-slate-400 list-disc list-inside">
-            <li>Schema-grounded examples (tool definitions + usage)</li>
-            <li>Multi-turn conversations showing tool selection reasoning</li>
-            <li>Error handling cases (wrong tool, missing params)</li>
-          </ul>
-        </div>
-      </div>
-    </section>
-
-    <!-- Section 2: How Much Data Do You Need? -->
-    <!-- humanized -->
-    <section id="how-much-data">
-      <h2 class="text-3xl font-bold mb-3 text-slate-900 dark:text-white">How Much Data Do You Need?</h2>
-      <p class="text-lg text-slate-600 dark:text-slate-300 mb-6">
-        Ah, the eternal question. "How much data do I need?" is the ML equivalent of "how long until we get there?" — and the answer is equally annoying: <em>it depends</em>. But unlike a road trip with no GPS, I'm going to hand you an actual map. Here's a cheat sheet distilled from dozens of papers and painful trial runs. 🗺️
-      </p>
-
-      <div class="overflow-x-auto">
-        <table class="comparison-table w-full text-sm border-collapse rounded-lg overflow-hidden shadow-sm">
-          <thead>
-            <tr class="bg-slate-100 dark:bg-slate-700">
-              <th class="text-left p-3 font-semibold">Objective</th>
-              <th class="text-left p-3 font-semibold">Minimum Viable</th>
-              <th class="text-left p-3 font-semibold">Recommended</th>
-              <th class="text-left p-3 font-semibold">Diminishing Returns</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-200 dark:divide-slate-600">
-            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800">
-              <td class="p-3 font-medium">Instruction Following</td>
-              <td class="p-3">500 examples</td>
-              <td class="p-3">5K–10K examples</td>
-              <td class="p-3">>50K (diversity matters more)</td>
-            </tr>
-            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800">
-              <td class="p-3 font-medium">Domain Adaptation</td>
-              <td class="p-3">10MB text</td>
-              <td class="p-3">100MB–1GB text</td>
-              <td class="p-3">>10GB (quality plateaus)</td>
-            </tr>
-            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800">
-              <td class="p-3 font-medium">Style Transfer</td>
-              <td class="p-3">200 examples</td>
-              <td class="p-3">1K–5K parallel pairs</td>
-              <td class="p-3">>10K (overfitting risk)</td>
-            </tr>
-            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800">
-              <td class="p-3 font-medium">Alignment (DPO)</td>
-              <td class="p-3">1K pairs</td>
-              <td class="p-3">5K–20K preference pairs</td>
-              <td class="p-3">>50K (annotator noise dominates)</td>
-            </tr>
-            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800">
-              <td class="p-3 font-medium">Tool-Calling</td>
-              <td class="p-3">300 examples</td>
-              <td class="p-3">2K–5K schema-grounded</td>
-              <td class="p-3">>15K (schema coverage matters)</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <div class="mt-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg p-4">
-        <p class="text-sm text-amber-800 dark:text-amber-200">
-          <strong>⚠️ SLM-specific note:</strong> Small Language Models (< 3B params) are more data-hungry than their bigger siblings. They have less "world knowledge" baked in, so you may need to push toward the upper end of these ranges. Our friend SmolLM2-135M especially benefits from more examples — it's the scrappy intern who learns fast but needs to see more examples before the pattern clicks. Meanwhile, GPT-4 is watching from its penthouse with 1.8 trillion parameters, casually one-shotting tasks that SmolLM2 needs 5,000 examples for. Life isn't fair, but hey — at least SmolLM2 fits on your laptop.
-        </p>
-      </div>
-    </section>
-
-    <!-- Section 3: Quality > Quantity -->
-    <!-- humanized -->
-    <section id="quality-over-quantity">
-      <h2 class="text-3xl font-bold mb-3 text-slate-900 dark:text-white">Data Quality > Data Quantity</h2>
-      <p class="text-lg text-slate-600 dark:text-slate-300 mb-6">
-        Here's the dirty secret of fine-tuning that took the community <em>years</em> to accept: <strong>1,000 pristine examples beat 100,000 noisy ones</strong>. Every. Single. Time. I know — it sounds like something a data quality vendor would put on a billboard. But it's true, and the proof is embarrassingly robust.
-      </p>
-
-      <div class="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-xl p-6 border border-blue-100 dark:border-blue-800 mb-6">
-        <h3 class="font-bold text-lg mb-3">🧪 The LIMA Principle</h3>
-        <p class="text-slate-700 dark:text-slate-300 mb-3">
-          The famous <em>LIMA: Less Is More for Alignment</em> paper showed that just 1,000 carefully curated examples could match models trained on 50K+ noisy examples. Why? Because every bad example teaches your model a bad habit.
-        </p>
-        <p class="text-slate-700 dark:text-slate-300">
-          Think of it like learning guitar: 30 minutes of focused practice with a metronome beats 3 hours of noodling random riffs. Your model's "practice time" is limited by compute — make every rep count.
-        </p>
-      </div>
-
-      <h3 class="font-bold text-xl mb-3">What makes data "high quality"?</h3>
-      <p class="text-slate-600 dark:text-slate-300 mb-3 text-sm italic">Think of these as the "five love languages" of your dataset — nail all five and your model will absolutely adore you:</p>
-      <ul class="space-y-3">
-        <li class="flex items-start gap-3">
-          <span class="text-green-500 font-bold text-lg">✓</span>
-          <span class="text-slate-600 dark:text-slate-300"><strong>Accurate:</strong> Responses are factually correct and complete</span>
-        </li>
-        <li class="flex items-start gap-3">
-          <span class="text-green-500 font-bold text-lg">✓</span>
-          <span class="text-slate-600 dark:text-slate-300"><strong>Consistent:</strong> Format and style are uniform across examples</span>
-        </li>
-        <li class="flex items-start gap-3">
-          <span class="text-green-500 font-bold text-lg">✓</span>
-          <span class="text-slate-600 dark:text-slate-300"><strong>Diverse:</strong> Covers the full distribution of inputs you expect at inference</span>
-        </li>
-        <li class="flex items-start gap-3">
-          <span class="text-green-500 font-bold text-lg">✓</span>
-          <span class="text-slate-600 dark:text-slate-300"><strong>Decontaminated:</strong> No test-set leakage, no duplicates, no garbage</span>
-        </li>
-        <li class="flex items-start gap-3">
-          <span class="text-red-500 font-bold text-lg">✗</span>
-          <span class="text-slate-600 dark:text-slate-300"><strong>Avoid:</strong> Auto-generated slop, conflicting labels, truncated responses — basically, anything that would make a human annotator sigh deeply and reach for coffee</span>
-        </li>
-      </ul>
-
-      <div class="mt-6 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-700 rounded-lg p-4">
-        <p class="text-sm text-indigo-800 dark:text-indigo-200">
-          <strong>📓 See it in action:</strong> The accompanying notebook demonstrates empirically what happens when you fine-tune on clean vs. noisy data with identical hyperparameters. Spoiler: the quality gap is <em>brutal</em> — like "did I accidentally shuffle the labels?" brutal.
-        </p>
-      </div>
-    </section>
-
-    <!-- Section 4: Dataset Construction Pipeline -->
-    <!-- humanized -->
-    <section id="pipeline">
-      <h2 class="text-3xl font-bold mb-3 text-slate-900 dark:text-white">The Dataset Construction Pipeline</h2>
-      <p class="text-lg text-slate-600 dark:text-slate-300 mb-6">
-        Building a dataset isn't "download from Hugging Face and pray." (Though we've all been there. No judgment.) It's a structured engineering process with actual steps. Think of it as a water purification plant: raw, murky river water goes in one end; clean, won't-give-you-dysentery drinking water comes out the other. Your data needs the same treatment.
-      </p>
-
-      <!-- Visual Reference -->
-      <div class="mb-8 bg-slate-50 dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700 text-center">
-        <img src="images/dataset-design-flowchart.svg" 
-             alt="Dataset construction pipeline: Define → Source → Collect → Filter → Validate → Version" 
-             class="mx-auto max-w-full h-auto"
-             loading="lazy">
-        <p class="text-xs text-slate-400 mt-2">Dataset Construction Pipeline (SVG diagram)</p>
-      </div>
-
-      <!-- Pipeline Steps -->
-      <div class="space-y-6">
-        <!-- Step 1 -->
-        <div class="flex gap-4 items-start">
-          <div class="flex-shrink-0 w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-lg">1</div>
-          <div>
-            <h3 class="font-bold text-lg text-slate-900 dark:text-white">Define Your Objective</h3>
-            <p class="text-slate-600 dark:text-slate-300">
-              What task? What format? What quality bar? Write this down before touching any data. A vague objective → a vague dataset → a vague model. Be ruthlessly specific: "Summarize legal contracts into 3-bullet executive briefs" beats "make it do summarization."
-            </p>
-          </div>
-        </div>
-
-        <!-- Step 2 -->
-        <div class="flex gap-4 items-start">
-          <div class="flex-shrink-0 w-10 h-10 bg-purple-600 text-white rounded-full flex items-center justify-center font-bold text-lg">2</div>
-          <div>
-            <h3 class="font-bold text-lg text-slate-900 dark:text-white">Choose Your Source</h3>
-            <p class="text-slate-600 dark:text-slate-300">
-              Options: existing datasets (Hugging Face Hub), synthetic generation (GPT-4/Claude as a teacher), manual annotation, or internal data. Each has trade-offs — it's the classic "fast, cheap, good: pick two" triangle. Synthetic data is cheap and fast but can introduce subtle "teacher fingerprints" (your model starts sounding suspiciously like GPT-4's younger sibling). Human annotation is gold-standard but expensive enough to make your finance team weep.
-            </p>
-          </div>
-        </div>
-
-        <!-- Step 3 -->
-        <div class="flex gap-4 items-start">
-          <div class="flex-shrink-0 w-10 h-10 bg-green-600 text-white rounded-full flex items-center justify-center font-bold text-lg">3</div>
-          <div>
-            <h3 class="font-bold text-lg text-slate-900 dark:text-white">Collect & Generate</h3>
-            <p class="text-slate-600 dark:text-slate-300">
-              Gather raw examples. If using synthetic generation, define templates and seed examples. If scraping, respect licenses (seriously — lawyers are scarier than OOM errors). Pro tip: aim for 3-5× more raw data than your target. You <em>will</em> lose a lot during filtering — think of it like panning for gold. Most of what you scoop up is river mud.
-            </p>
-          </div>
-        </div>
-
-        <!-- Step 4 -->
-        <div class="flex gap-4 items-start">
-          <div class="flex-shrink-0 w-10 h-10 bg-orange-600 text-white rounded-full flex items-center justify-center font-bold text-lg">4</div>
-          <div>
-            <h3 class="font-bold text-lg text-slate-900 dark:text-white">Filter Aggressively</h3>
-            <p class="text-slate-600 dark:text-slate-300">
-              This is where the magic happens — and where most teams get timid. Remove duplicates (exact and near-duplicate via MinHash). Drop low-quality examples (too short, too long, low perplexity, garbled text). Apply domain-specific heuristics. Be ruthless. Channel your inner Marie Kondo: if an example does not spark joy (or learning signal), it does not make the cut. Most teams don't filter hard enough, and their models pay the price.
-            </p>
-          </div>
-        </div>
-
-        <!-- Step 5 -->
-        <div class="flex gap-4 items-start">
-          <div class="flex-shrink-0 w-10 h-10 bg-red-600 text-white rounded-full flex items-center justify-center font-bold text-lg">5</div>
-          <div>
-            <h3 class="font-bold text-lg text-slate-900 dark:text-white">Validate & Review</h3>
-            <p class="text-slate-600 dark:text-slate-300">
-              Sample 5-10% and manually review. Yes, with your actual human eyeballs. Check for format consistency, label accuracy, and bias. Use inter-annotator agreement if multiple reviewers. I know manual review sounds tedious — and it is — but a single validation pass catches issues that would otherwise cost you days of wasted training. (The GPU said: <code>[out of memory]</code> is bad enough without discovering your data was garbage <em>after</em> paying the compute bill.)
-            </p>
-          </div>
-        </div>
-
-        <!-- Step 6 -->
-        <div class="flex gap-4 items-start">
-          <div class="flex-shrink-0 w-10 h-10 bg-indigo-600 text-white rounded-full flex items-center justify-center font-bold text-lg">6</div>
-          <div>
-            <h3 class="font-bold text-lg text-slate-900 dark:text-white">Version & Document</h3>
-            <p class="text-slate-600 dark:text-slate-300">
-              Tag your dataset with a version (v1.0, v1.1…). Document: source, filters applied, size, known limitations. Future-you will send present-you a thank-you card. (Past-you who didn't document anything? We don't talk to that person.) Use dataset cards (Hugging Face format) or at minimum a README alongside your data files.
-            </p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Section 5: Try It Yourself -->
-    <!-- humanized -->
-    <section id="try-it">
-      <div class="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl p-8 border border-green-200 dark:border-green-700 text-center">
-        <h2 class="text-2xl font-bold mb-3 text-green-800 dark:text-green-200">🚀 Try It Yourself</h2>
-        <p class="text-green-700 dark:text-green-300 mb-6 max-w-lg mx-auto">
-          Alright, you've read the theory — now let's get your hands dirty. The companion notebook walks you through the entire pipeline from scratch: defining objectives, sourcing data, filtering the junk, and producing a versioned, ready-to-train dataset. By the end, you'll have built something real. No hand-waving. No "left as an exercise for the reader."
-        </p>
-        <a href="../notebooks/01_dataset_design_and_data_prep.ipynb" 
-           class="inline-block bg-green-600 hover:bg-green-700 text-white font-semibold px-8 py-3 rounded-lg shadow-md hover:shadow-lg transition-all">
-          Open Notebook: Dataset Design & Data Prep →
-        </a>
-        <p class="text-xs text-green-600 dark:text-green-400 mt-3">
-          Works in Google Colab • No GPU required for this notebook • Your wallet is safe 💚
-        </p>
-      </div>
-    </section>
-
-  </main>
+      <blockquote class="callout mt-6">
+        <span class="callout-label">The uncomfortable truth</span>
+        Ninety percent of production fine-tuning today is LoRA or QLoRA. The other techniques exist for
+        specific reasons. When those reasons apply, they matter. When they do not, LoRA is the answer.
+      </blockquote>
+    </div>
+  </section>
 
   <!-- Footer -->
-  <footer class="bg-slate-100 dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 py-8 mt-16">
-    <div class="max-w-4xl mx-auto px-6 text-center text-sm text-slate-500 dark:text-slate-400">
-      <p class="mb-2">Part of the <strong>SLM Fine-Tuning Tutorial</strong> series</p>
-      <div class="flex justify-center gap-4 flex-wrap">
-        <a href="index.html" class="hover:text-blue-600 dark:hover:text-blue-400">Home</a>
-        <a href="techniques.html" class="hover:text-blue-600 dark:hover:text-blue-400">Techniques</a>
-        <a href="comparison.html" class="hover:text-blue-600 dark:hover:text-blue-400">Comparison</a>
-        <a href="choosing-method.html" class="hover:text-blue-600 dark:hover:text-blue-400">Choosing Method</a>
-        <a href="guide.html" class="hover:text-blue-600 dark:hover:text-blue-400">Learning Path</a>
-        <a href="safety.html" class="hover:text-blue-600 dark:hover:text-blue-400">Safety</a>
-      </div>
+  <footer class="site-footer">
+    <div class="container-wide flex flex-wrap items-center justify-between gap-3">
+      <div>Fine-tuning small language models without losing your mind (or your GPU).</div>
+      <nav class="flex gap-4 text-xs">
+        <a class="nav-link" href="comparison.html">Comparison</a>
+        <a class="nav-link" href="techniques.html">Techniques</a>
+        <a class="nav-link" href="guide.html">Guide</a>
+      </nav>
     </div>
   </footer>
 
-  <script src="js/main.js"></script>
+  <script>
+    // ---- Wizard state ----
+    const answers = { vram: null, goal: null, data: null, deploy: null };
+    let step = 1;
+
+    function showStep(n) {
+      document.querySelectorAll('.wizard-step').forEach(s => s.classList.remove('active'));
+      document.querySelector('[data-step="' + n + '"]').classList.add('active');
+      for (let i = 1; i <= 4; i++) {
+        document.getElementById('wp' + i).classList.toggle('done', i <= n);
+      }
+      step = n;
+    }
+
+    function pick(key, value) {
+      answers[key] = value;
+      if (step < 4) {
+        showStep(step + 1);
+      } else {
+        computeVerdict();
+        showStep(5);
+      }
+    }
+
+    function resetWizard() {
+      answers.vram = null; answers.goal = null; answers.data = null; answers.deploy = null;
+      showStep(1);
+    }
+
+    // Decision logic — priority order matters
+    function computeVerdict() {
+      let primary, reason, href, alternates = [];
+
+      // Goal is the strongest driver
+      if (answers.goal === 'combine') {
+        primary = 'Model merging';
+        reason  = 'You already have fine-tuned models. Averaging weights with SLERP, TIES, or DARE gives you a combined model in seconds — no training, no data. If it works, ship it.';
+        href    = 'techniques.html#merge';
+        alternates = ['LoRA — for a controlled retrain against a fresh eval set.', 'Distillation — if the parent models are too large to merge.'];
+      } else if (answers.goal === 'compress') {
+        primary = 'Knowledge distillation';
+        reason  = 'A teacher-student setup transfers behavior from a large model into a smaller one. Cheaper inference, most of the quality. Notebook 09 has the recipe.';
+        href    = 'techniques.html#distill';
+        alternates = ['QLoRA — if you want quality at the smaller size, not just imitation.', 'Model merging — if you have multiple experts to compress into one.'];
+      } else if (answers.goal === 'alignment') {
+        primary = 'DPO';
+        reason  = 'Alignment problems are preference problems. DPO learns from chosen/rejected pairs without a reward model. Notebook 08 walks through the loss.';
+        href    = 'techniques.html#dpo';
+        alternates = ['LoRA (SFT first) — DPO usually benefits from an SFT warmup.', 'Prompt tuning — if your alignment need is very narrow.'];
+      } else {
+        // capability — most common branch
+        if (answers.vram === 'tight') {
+          // Under 8 GB: QLoRA for larger bases, prompt/LoRA for small
+          if (answers.data === 'tiny') {
+            primary = 'Prompt tuning';
+            reason  = 'Fewer than 100 examples and tight VRAM. Prompt tuning learns a handful of virtual tokens with almost no risk of overfitting. Notebook 06.';
+            href    = 'techniques.html#prompt';
+            alternates = ['LoRA — if the task needs more expressive updates than embeddings can carry.', 'QLoRA — if you are on a bigger base and want more capacity.'];
+          } else {
+            primary = 'QLoRA';
+            reason  = 'Tight VRAM plus enough training data to do more than tinker. QLoRA quantizes the base to 4-bit NF4 and puts LoRA on top. Notebook 05 has the whole memory story.';
+            href    = 'techniques.html#qlora';
+            alternates = ['LoRA — if your base fits in fp16 without quantizing.', 'Prompt tuning — if you have less data than you thought.'];
+          }
+        } else if (answers.vram === 'mid') {
+          primary = 'LoRA';
+          reason  = 'The default answer for a reason. Freeze the base, train two tiny matrices, get almost all of full fine-tuning\u2019s quality at a fraction of the cost. Notebook 04.';
+          href    = 'techniques.html#lora';
+          alternates = ['DoRA — LoRA plus a magnitude vector, sometimes slightly better.', 'Prompt tuning — if the task is very narrow.'];
+        } else {
+          // plenty of VRAM
+          if (answers.data === 'big') {
+            primary = 'Full fine-tuning';
+            reason  = 'Big data, big memory, and the goal is a capability upgrade. Full FT will squeeze out the last percent of quality. Notebook 02 covers the memory setup.';
+            href    = 'techniques.html#full';
+            alternates = ['LoRA — for a much cheaper baseline you can compare against.', 'Distillation — if you want to end up with a smaller model.'];
+          } else {
+            primary = 'LoRA';
+            reason  = 'You have the VRAM for full fine-tuning, but only a small dataset. LoRA is the safer bet — less overfitting risk, faster to iterate.';
+            href    = 'techniques.html#lora';
+            alternates = ['Full fine-tuning — worth trying if you have a strong eval set to catch regressions.', 'DoRA — the slightly heavier LoRA cousin, sometimes wins.'];
+          }
+        }
+      }
+
+      // Deploy target nudges
+      if (answers.deploy === 'edge' && primary === 'Full fine-tuning') {
+        alternates.unshift('Consider QLoRA instead — you will need a quantized model on edge anyway.');
+      }
+      if (answers.deploy === 'edge' && primary === 'LoRA') {
+        alternates.unshift('At deploy time, fuse the LoRA weights into the base for zero inference overhead.');
+      }
+
+      document.getElementById('verdict-name').textContent = primary;
+      document.getElementById('verdict-reason').textContent = reason;
+      document.getElementById('verdict-link').href = href;
+      document.getElementById('verdict-link').textContent = 'See the ' + primary + ' deep-dive';
+      const list = document.getElementById('verdict-runners-up');
+      list.innerHTML = '';
+      alternates.forEach(a => {
+        const li = document.createElement('li');
+        li.textContent = a;
+        list.appendChild(li);
+      });
+    }
+  </script>
 </body>
 </html>

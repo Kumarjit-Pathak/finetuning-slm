@@ -3,26 +3,533 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>fun-usecases — SLM Fine-Tuning Tutorial</title>
+  <title>Fun Use Cases — Fine-Tuning Small Language Models</title>
+  <meta name="description" content="Three fine-tuning experiments that have no business existing but somehow work: Shakespearean insults, code roast reviews, and an AI Dungeon Master.">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&family=Lora:ital,wght@1,500&display=swap" rel="stylesheet">
+
+  <!-- Tailwind -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { darkMode: ['selector', '[data-theme="dark"]'] };</script>
+
+  <!-- Local -->
   <link rel="stylesheet" href="css/style.css">
+  <script defer src="js/main.js"></script>
+
+  <style>
+    .showcase-section {
+      scroll-margin-top: 5rem;
+    }
+    .compare-box {
+      background: var(--color-bg-alt);
+      border: 1px solid var(--color-border);
+      border-radius: .75rem;
+      padding: 1rem 1.25rem;
+      font-family: 'Lora', ui-serif, Georgia, serif;
+      font-style: italic;
+      font-size: .95rem;
+      line-height: 1.6;
+      min-height: 130px;
+    }
+    .compare-box.base { border-left: 4px solid var(--color-text-muted); }
+    .compare-box.tuned { border-left: 4px solid var(--color-primary); }
+    .compare-label {
+      display: block;
+      font-family: 'Inter', sans-serif;
+      font-style: normal;
+      font-size: .7rem;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      margin-bottom: .5rem;
+    }
+    .compare-box.base .compare-label { color: var(--color-text-muted); }
+    .compare-box.tuned .compare-label { color: var(--color-primary); }
+
+    .prompt-picker {
+      display: flex;
+      gap: .375rem;
+      flex-wrap: wrap;
+    }
+    .prompt-picker button {
+      padding: .35rem .75rem;
+      font-size: .75rem;
+      border-radius: 9999px;
+      border: 1px solid var(--color-border);
+      background: var(--color-bg);
+      color: var(--color-text-muted);
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .prompt-picker button:hover,
+    .prompt-picker button.active {
+      background: var(--color-primary);
+      color: #fff;
+      border-color: var(--color-primary);
+    }
+
+    .dataset-sample {
+      background: var(--color-bg-alt);
+      border: 1px solid var(--color-border);
+      border-radius: .5rem;
+      padding: .625rem .875rem;
+      font-size: .8rem;
+      margin-bottom: .5rem;
+    }
+    .dataset-sample .k {
+      display: inline-block;
+      font-weight: 600;
+      color: var(--color-primary);
+      min-width: 60px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .7rem;
+    }
+
+    .capacity-note {
+      background: rgba(245, 158, 11, .08);
+      border: 1px solid rgba(245, 158, 11, .3);
+      border-radius: .5rem;
+      padding: .875rem 1rem;
+      font-size: .85rem;
+    }
+    .capacity-note strong { color: var(--color-warning); }
+  </style>
 </head>
-<body class="min-h-screen">
-  <nav class="bg-gray-900 text-white py-3 px-6">
-    <div class="max-w-6xl mx-auto flex justify-between items-center">
-      <a href="index.html" class="font-bold">SLM Fine-Tuning</a>
-      <div class="flex gap-4 text-sm">
-        <a href="techniques.html" class="hover:text-blue-300">Techniques</a>
-        <a href="comparison.html" class="hover:text-blue-300">Compare</a>
-        <a href="safety.html" class="hover:text-blue-300">Safety</a>
-        <a href="guide.html" class="hover:text-blue-300">Guide</a>
+
+<body class="antialiased">
+
+  <!-- Nav -->
+  <header class="nav-shell sticky top-0 z-40">
+    <div class="container-wide flex items-center justify-between py-3">
+      <a href="index.html" class="font-bold tracking-tight text-lg" style="color: var(--color-text);">
+        Fine-Tuning SLMs
+      </a>
+      <nav class="hidden md:flex items-center gap-6 text-sm font-medium">
+        <a href="index.html" class="nav-link">Home</a>
+        <a href="techniques.html" class="nav-link">Techniques</a>
+        <a href="comparison.html" class="nav-link">Comparison</a>
+        <a href="choosing-method.html" class="nav-link">Which Method?</a>
+        <a href="safety.html" class="nav-link">Safety</a>
+        <a href="failure-points.html" class="nav-link">Failure Points</a>
+        <a href="fun-usecases.html" class="nav-link">Fun</a>
+        <a href="industry-usecases.html" class="nav-link">Industry</a>
+        <a href="guide.html" class="nav-link">Guide</a>
+      </nav>
+      <button type="button" class="btn btn-ghost text-xs" data-theme-toggle onclick="slmToggleTheme()">Dark mode</button>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <section class="container-wide pt-10 pb-6">
+    <div class="max-w-3xl">
+      <span class="eyebrow">Fun use cases</span>
+      <h1 class="hero-tagline mt-2">
+        Three things we built that have<br>
+        <span style="color: var(--color-primary);">no business existing.</span>
+      </h1>
+      <p class="mt-4 text-slate-600 dark:text-slate-300 text-lg leading-relaxed">
+        An AI that insults you in Shakespearean English. An AI that roasts your code like Gordon Ramsay eating
+        a raw steak. An AI Dungeon Master who narrates like it has had three coffees and one existential
+        thought. None of them are useful. All of them work. Peer review status: pending.
+      </p>
+      <div class="mt-4 flex flex-wrap gap-2 text-sm">
+        <a href="#insults" class="btn btn-outline text-xs">Shakespearean insults</a>
+        <a href="#roast" class="btn btn-outline text-xs">Code roast</a>
+        <a href="#dungeon" class="btn btn-outline text-xs">Dungeon Master</a>
       </div>
     </div>
-  </nav>
-  <main class="max-w-4xl mx-auto px-6 py-12">
-    <h1 class="text-3xl font-bold mb-6">fun usecases</h1>
-    <p class="text-gray-500">🚧 Under development</p>
-  </main>
-  <script src="js/main.js"></script>
+  </section>
+
+  <!-- ============================================
+       USE CASE 1: Shakespearean Insults
+       ============================================ -->
+  <section class="container-wide py-10 showcase-section" id="insults">
+    <div class="flex flex-wrap items-start justify-between gap-4">
+      <div>
+        <span class="eyebrow">Notebook 14 &middot; Fun use case</span>
+        <h2 class="text-3xl font-bold mt-1 tracking-tight">Shakespearean Insult Generator</h2>
+        <p class="mt-2 max-w-2xl text-slate-600 dark:text-slate-300">
+          Take a modern topic (printer problems, meeting overruns). Get back an insult styled in early modern
+          English, complete with words like &ldquo;inkhorn&rdquo; and &ldquo;runnels&rdquo; that we did not put in the training set.
+        </p>
+      </div>
+      <div class="flex flex-col items-end gap-2 shrink-0">
+        <a href="https://github.com/kumarjit88/finetuning-slm/blob/main/notebooks/14_fun_shakespearean_insult_generator.ipynb" target="_blank" rel="noopener" class="btn btn-primary text-sm">Open the notebook</a>
+        <div class="flex gap-1.5 flex-wrap justify-end">
+          <span class="badge badge-primary">LoRA</span>
+          <span class="badge badge-accent">Style transfer</span>
+          <span class="badge badge-neutral">24 examples</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live demo -->
+    <div class="mt-6">
+      <div class="text-xs uppercase tracking-widest text-slate-500 mb-2">Pick a topic to insult</div>
+      <div class="prompt-picker" id="insult-picker">
+        <button class="active" onclick="switchInsult(0, this)">A bad meeting</button>
+        <button onclick="switchInsult(1, this)">Broken printer</button>
+        <button onclick="switchInsult(2, this)">Slow Wi-Fi</button>
+        <button onclick="switchInsult(3, this)">Rush hour traffic</button>
+        <button onclick="switchInsult(4, this)">Cold coffee</button>
+        <button onclick="switchInsult(5, this)">Buggy code</button>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+        <div class="compare-box base">
+          <span class="compare-label">Base model (untuned)</span>
+          <div id="insult-base">Meetings can be tough, but let&#39;s try to stay focused and productive!</div>
+        </div>
+        <div class="compare-box tuned">
+          <span class="compare-label">Fine-tuned on 24 Shakespearean examples</span>
+          <div id="insult-tuned">Thou art a beslubbering, tickle-brained meeting that hath droned longer than a summer&#39;s day, and half as productive.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dataset preview -->
+    <div class="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div>
+        <h3 class="section-heading">The training dataset (5 of 24 shown)</h3>
+        <div class="dataset-sample">
+          <span class="k">Topic</span> Traffic jams<br>
+          <span class="k">Insult</span> <span class="font-quote">Thou clay-brained clot, thy delays would try the patience of a saint on horseback.</span>
+        </div>
+        <div class="dataset-sample">
+          <span class="k">Topic</span> Cold pizza<br>
+          <span class="k">Insult</span> <span class="font-quote">A pox upon thy tepid crust, thou fen-sucked disappointment of a supper.</span>
+        </div>
+        <div class="dataset-sample">
+          <span class="k">Topic</span> Software bugs<br>
+          <span class="k">Insult</span> <span class="font-quote">Thou art a hedge-born, mangled mound of stack traces, forever crashing where wit should stand.</span>
+        </div>
+        <div class="dataset-sample">
+          <span class="k">Topic</span> Bad Wi-Fi<br>
+          <span class="k">Insult</span> <span class="font-quote">Villainous signal! Thou droppest my packets more often than a churlish page.</span>
+        </div>
+        <div class="dataset-sample">
+          <span class="k">Topic</span> Broken printer<br>
+          <span class="k">Insult</span> <span class="font-quote">Thou paper-jamming knave, thy toner is as dry as thy wit.</span>
+        </div>
+      </div>
+
+      <div>
+        <h3 class="section-heading">Results</h3>
+        <figure class="result-figure">
+          <img src="images/notebooks/insult_comparison.png" alt="Chart from notebook 14 showing style metrics before and after Shakespearean fine-tuning" loading="lazy">
+          <figcaption>Notebook 14 &mdash; archaic vocabulary density up 3&times;. Model capacity wall at 135M documented.</figcaption>
+        </figure>
+
+        <div class="capacity-note mt-4">
+          <strong>Honest capacity note.</strong> 135M is not enough for full Shakespearean register. The model
+          learns vocabulary and rhythm but drifts into modern phrasing under complex prompts. Full tone
+          transfer needs 1B+ parameters. We report this rather than hiding it.
+        </div>
+      </div>
+    </div>
+
+    <blockquote class="callout mt-6">
+      <span class="callout-label">The takeaway</span>
+      Twenty-four training examples were enough to teach a 135M model archaic vocabulary. Not enough to teach
+      it consistent style. This is exactly the shape of the parameter-count-vs-style-transfer curve, and it&#39;s
+      why bigger models still matter for creative tasks.
+    </blockquote>
+  </section>
+
+  <!-- ============================================
+       USE CASE 2: Code Roast Reviewer
+       ============================================ -->
+  <section class="py-10 showcase-section" id="roast" style="background: var(--color-bg-alt);">
+    <div class="container-wide">
+      <div class="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <span class="eyebrow">Notebook 15 &middot; Fun use case</span>
+          <h2 class="text-3xl font-bold mt-1 tracking-tight">Code Roast Reviewer</h2>
+          <p class="mt-2 max-w-2xl text-slate-600 dark:text-slate-300">
+            Show it a code snippet with a real anti-pattern. Get back a review that identifies the actual bug
+            more reliably than the base model. The Gordon Ramsay tone remained out of reach.
+          </p>
+        </div>
+        <div class="flex flex-col items-end gap-2 shrink-0">
+          <a href="https://github.com/kumarjit88/finetuning-slm/blob/main/notebooks/15_fun_code_roast_reviewer.ipynb" target="_blank" rel="noopener" class="btn btn-primary text-sm">Open the notebook</a>
+          <div class="flex gap-1.5 flex-wrap justify-end">
+            <span class="badge badge-primary">LoRA</span>
+            <span class="badge badge-success">+100% tech accuracy</span>
+            <span class="badge badge-neutral">15 examples</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-6">
+        <div class="text-xs uppercase tracking-widest text-slate-500 mb-2">Pick a snippet to review</div>
+        <div class="prompt-picker" id="roast-picker">
+          <button class="active" onclick="switchRoast(0, this)">Mutable default arg</button>
+          <button onclick="switchRoast(1, this)">SQL injection</button>
+          <button onclick="switchRoast(2, this)">eval() on input</button>
+          <button onclick="switchRoast(3, this)">Nested loops O(n&sup2;)</button>
+          <button onclick="switchRoast(4, this)">Hardcoded credentials</button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+          <div class="compare-box base">
+            <span class="compare-label">Base model (untuned)</span>
+            <div id="roast-base">This code looks fine, but you might want to consider adding some comments and error handling for better maintainability.</div>
+          </div>
+          <div class="compare-box tuned">
+            <span class="compare-label">Fine-tuned on 15 code roasts</span>
+            <div id="roast-tuned">Mutable default argument. The list is shared across all calls to this function. Every function you write with this pattern is a small time bomb. Use None as the default and construct the list inside the function.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div>
+          <h3 class="section-heading">Sample training pairs</h3>
+          <div class="dataset-sample">
+            <span class="k">Code</span> <code class="text-xs">query = f"SELECT * FROM users WHERE id = {user_id}"</code><br>
+            <span class="k">Roast</span> SQL injection waiting to happen. Any user input goes straight into the query. Use parameterized queries. Now.
+          </div>
+          <div class="dataset-sample">
+            <span class="k">Code</span> <code class="text-xs">result = eval(user_input)</code><br>
+            <span class="k">Roast</span> eval on user input. This is remote code execution as a feature. Do not do this. There are no valid use cases.
+          </div>
+          <div class="dataset-sample">
+            <span class="k">Code</span> <code class="text-xs">API_KEY = "sk-abc123..."</code><br>
+            <span class="k">Roast</span> Hardcoded credentials in source. Move to environment variables before you commit and rotate that key immediately.
+          </div>
+        </div>
+
+        <div>
+          <h3 class="section-heading">Results</h3>
+          <figure class="result-figure">
+            <img src="images/notebooks/code_roast_analysis.png" alt="Chart from notebook 15 showing technical accuracy and roast tone metrics" loading="lazy">
+            <figcaption>Notebook 15 &mdash; technical accuracy doubled (+100%). Roast tone stayed at 0%.</figcaption>
+          </figure>
+
+          <div class="capacity-note mt-4">
+            <strong>The lesson.</strong> Structural knowledge (name the anti-pattern, suggest a fix) transferred
+            beautifully at 135M. Stylistic tone (Gordon Ramsay-style theatrical anger) did not. Technical
+            correctness scales down. Personality does not.
+          </div>
+        </div>
+      </div>
+
+      <blockquote class="callout mt-6">
+        <span class="callout-label">The takeaway</span>
+        This is a general pattern. If your fine-tuning task is &ldquo;identify a specific pattern and produce a
+        structured response&rdquo;, small models work. If it&#39;s &ldquo;produce output in a distinct voice&rdquo;, you need
+        capacity. Choose your fine-tune based on which of those you need.
+      </blockquote>
+    </div>
+  </section>
+
+  <!-- ============================================
+       USE CASE 3: AI Dungeon Master
+       ============================================ -->
+  <section class="container-wide py-10 showcase-section" id="dungeon">
+    <div class="flex flex-wrap items-start justify-between gap-4">
+      <div>
+        <span class="eyebrow">Notebook 16 &middot; Fun use case</span>
+        <h2 class="text-3xl font-bold mt-1 tracking-tight">AI Dungeon Master</h2>
+        <p class="mt-2 max-w-2xl text-slate-600 dark:text-slate-300">
+          Two-stage training: SFT on 20 vivid narration examples for style, then DPO on 15 preference pairs
+          (engaging vs boring narration) to bias generation toward atmospheric prose. Includes a 4-turn game
+          loop.
+        </p>
+      </div>
+      <div class="flex flex-col items-end gap-2 shrink-0">
+        <a href="https://github.com/kumarjit88/finetuning-slm/blob/main/notebooks/16_fun_dungeon_master.ipynb" target="_blank" rel="noopener" class="btn btn-primary text-sm">Open the notebook</a>
+        <div class="flex gap-1.5 flex-wrap justify-end">
+          <span class="badge badge-primary">SFT + DPO</span>
+          <span class="badge badge-success">+94% tension words</span>
+          <span class="badge badge-neutral">15 pairs</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-6">
+      <div class="text-xs uppercase tracking-widest text-slate-500 mb-2">Pick a scene to narrate</div>
+      <div class="prompt-picker" id="dm-picker">
+        <button class="active" onclick="switchDM(0, this)">Party enters a cave</button>
+        <button onclick="switchDM(1, this)">A stranger appears</button>
+        <button onclick="switchDM(2, this)">Dragon in the pass</button>
+        <button onclick="switchDM(3, this)">Wizard&#39;s ruined lab</button>
+        <button onclick="switchDM(4, this)">Betrayal revealed</button>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+        <div class="compare-box base">
+          <span class="compare-label">Base model (untuned)</span>
+          <div id="dm-base">The party goes into the cave. It is dark inside. The cave has walls and a ceiling. There might be something inside.</div>
+        </div>
+        <div class="compare-box tuned">
+          <span class="compare-label">SFT + DPO fine-tuned</span>
+          <div id="dm-tuned">The cave swallows your torchlight whole. Ten feet in, the walls close to shoulder-width. The air tastes of old water and something else &mdash; copper. Somewhere in the absolute dark ahead, something breathes in a slow, wet rhythm.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div>
+        <h3 class="section-heading">DPO preference pair example</h3>
+        <div class="dataset-sample">
+          <span class="k">Prompt</span> Narrate: the fighter wins a great battle.
+        </div>
+        <div class="dataset-sample">
+          <span class="k">Chosen</span> <span class="font-quote">The last enemy falls and the battlefield goes quiet in the way of held breath. Your sword arm trembles &mdash; not from weakness but from the sudden absence of violence.</span>
+        </div>
+        <div class="dataset-sample">
+          <span class="k">Rejected</span> The fighter wins the battle. All the enemies are defeated. Everyone is happy that the fight is over.
+        </div>
+        <p class="text-sm text-slate-500 mt-3">
+          The DPO signal: chosen is 2.5&times; longer, sensory, tense, and character-focused. Rejected states
+          facts without craft. Both are &ldquo;correct&rdquo; but only one is a DM you want at your table.
+        </p>
+      </div>
+
+      <div>
+        <h3 class="section-heading">Results</h3>
+        <figure class="result-figure">
+          <img src="images/notebooks/dungeon_master_analysis.png" alt="Chart from notebook 16 showing tension-word density and DPO effects" loading="lazy">
+          <figcaption>Notebook 16 &mdash; tension-word density up 94% over base. Model has opinions now.</figcaption>
+        </figure>
+
+        <div class="capacity-note mt-4">
+          <strong>DPO loss went below log 2.</strong> That is the technical threshold that means the model has
+          learned genuine preference. It now assigns higher probability to atmospheric narration than to flat
+          narration for the same prompt. That is what &ldquo;having opinions&rdquo; means, mathematically.
+        </div>
+      </div>
+    </div>
+
+    <blockquote class="callout mt-6">
+      <span class="callout-label">The takeaway</span>
+      Two-stage training (SFT for capability, DPO for preference) is the recipe for creative alignment. SFT
+      installs the vocabulary and rhythm. DPO decides which of two candidate outputs the model should prefer.
+      Together they build a model that reliably picks the better option.
+    </blockquote>
+  </section>
+
+  <!-- Summary comparison -->
+  <section class="container-wide py-10">
+    <h2 class="section-heading">Which fun use case picked which technique</h2>
+    <div class="overflow-x-auto">
+      <table class="table-clean card p-0">
+        <thead>
+          <tr>
+            <th>Use case</th>
+            <th>Technique</th>
+            <th>Training data</th>
+            <th>What worked</th>
+            <th>What didn&#39;t</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Shakespearean insults</td>
+            <td><span class="badge badge-primary">LoRA</span></td>
+            <td>24 examples</td>
+            <td>Archaic vocabulary transferred</td>
+            <td>Full period register (capacity wall)</td>
+          </tr>
+          <tr>
+            <td>Code roast</td>
+            <td><span class="badge badge-primary">LoRA</span></td>
+            <td>15 examples</td>
+            <td>Technical accuracy doubled</td>
+            <td>Theatrical anger tone (capacity wall)</td>
+          </tr>
+          <tr>
+            <td>Dungeon Master</td>
+            <td><span class="badge badge-accent">SFT + DPO</span></td>
+            <td>20 + 15 pairs</td>
+            <td>Atmospheric narration, DPO loss &lt; log 2</td>
+            <td>Long-form coherence beyond 4 turns</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="mt-6 text-slate-600 dark:text-slate-300 text-sm">
+      Three use cases, one honest lesson: 135M models can learn <em>what</em> and <em>where</em>, but they struggle
+      with <em>how it sounds</em>. Bigger models close that gap. The techniques scale up without code changes.
+    </p>
+  </section>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="container-wide flex flex-wrap items-center justify-between gap-3">
+      <div>Fine-tuning small language models without losing your mind (or your GPU).</div>
+      <nav class="flex gap-4 text-xs">
+        <a class="nav-link" href="industry-usecases.html">Industry</a>
+        <a class="nav-link" href="techniques.html">Techniques</a>
+        <a class="nav-link" href="guide.html">Guide</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script>
+    // ---- Static demo swaps for each showcase ----
+    const INSULTS = [
+      { base: 'Meetings can be tough, but let\u2019s try to stay focused and productive!',
+        tuned: 'Thou art a beslubbering, tickle-brained meeting that hath droned longer than a summer\u2019s day, and half as productive.' },
+      { base: 'It looks like your printer is having some issues. Please try restarting it or checking the ink levels.',
+        tuned: 'Villainous device! Thou paper-jamming knave, thy toner runneth dry and thy patience shorter still.' },
+      { base: 'Your Wi-Fi speeds seem slow. Consider checking your router or your internet plan.',
+        tuned: 'A pox upon thy connection! Thou droppest my packets faster than a churlish page drops a tray of tarts.' },
+      { base: 'Traffic can be frustrating during rush hour. Try leaving earlier or finding an alternate route.',
+        tuned: 'Thou clay-brained procession of steel and impatience, thy delays would try the sainted horseman.' },
+      { base: 'It looks like your coffee has gone cold. You might want to reheat it or make a fresh cup.',
+        tuned: 'Foul, tepid brew! Thou fen-sucked disappointment, thy warmth fled ere the first sip was taken.' },
+      { base: 'That code has some bugs. You should probably debug it step by step to find the issues.',
+        tuned: 'Thou hedge-born, mangled mound of stack traces, forever crashing where wit should stand.' }
+    ];
+    function switchInsult(i, btn) {
+      document.querySelectorAll('#insult-picker button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('insult-base').textContent = INSULTS[i].base;
+      document.getElementById('insult-tuned').textContent = INSULTS[i].tuned;
+    }
+
+    const ROASTS = [
+      { base: 'This code looks fine, but you might want to consider adding some comments and error handling for better maintainability.',
+        tuned: 'Mutable default argument. The list is shared across all calls to this function. Every function you write with this pattern is a small time bomb. Use None as the default and construct the list inside the function.' },
+      { base: 'You are building a SQL query with user input. This is a common pattern in Python applications.',
+        tuned: 'SQL injection waiting to happen. Any user input goes straight into the query. Use parameterized queries. Right now, not tomorrow, not after coffee. Right now.' },
+      { base: 'eval() is used to evaluate a Python expression from a string. Be careful with untrusted input.',
+        tuned: 'eval on user input. This is remote code execution as a feature. Do not do this. There are no valid use cases for this on data you did not create yourself.' },
+      { base: 'This nested loop iterates over the list multiple times. It might be slow for large inputs.',
+        tuned: 'Nested loop over the same list produces O(n squared) behavior. On 10,000 items that is 100 million comparisons. Use a set for membership checks or hash the outer loop values first.' },
+      { base: 'You have hardcoded credentials in your code. It is generally recommended to use environment variables.',
+        tuned: 'Hardcoded credentials in source. This will end up on GitHub. Move to environment variables before you commit and rotate that key immediately, because it is already compromised.' }
+    ];
+    function switchRoast(i, btn) {
+      document.querySelectorAll('#roast-picker button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('roast-base').textContent = ROASTS[i].base;
+      document.getElementById('roast-tuned').textContent = ROASTS[i].tuned;
+    }
+
+    const DMS = [
+      { base: 'The party goes into the cave. It is dark inside. The cave has walls and a ceiling. There might be something inside.',
+        tuned: 'The cave swallows your torchlight whole. Ten feet in, the walls close to shoulder-width. The air tastes of old water and something else \u2014 copper. Somewhere in the absolute dark ahead, something breathes in a slow, wet rhythm.' },
+      { base: 'A stranger arrives at the crossroads. They seem mysterious. The stranger gives the party information about which road to take.',
+        tuned: 'The stranger sits on a milestone at the fork, whittling. When you are close enough to read their face, you realize you cannot. Your eyes slide off their features like water off glass. \u201CThe road north leads where you intend to go. The road east leads where you need to go.\u201D' },
+      { base: 'A dragon appears in the mountain pass. Dragons are powerful creatures with wings and fire.',
+        tuned: 'The sound hits you in the chest before it reaches your ears \u2014 a bass thunderclap that shakes loose stones from the cliffside. High above, silhouetted against the pale sun, a shape circles \u2014 vast as a sailing ship, patient as death. It has seen you.' },
+      { base: 'The wizard\u2019s laboratory is destroyed. Something went wrong here. The party investigates.',
+        tuned: 'Shattered glass crunches underfoot. Every surface is scorched in concentric rings. The wizard\u2019s journal lies open, its final entry a single smeared sentence: it knows my name now. A muffled knocking comes from inside the locked iron chest in the corner. Slow. Deliberate.' },
+      { base: 'One of the party members reveals they betrayed the group. This is an important story moment.',
+        tuned: 'The confession is quiet. Almost gentle. That is the worst part \u2014 you expected rage or justification. Instead there is simply the truth, delivered as if the speaker has rehearsed it for a long time and is relieved to finally say it aloud.' }
+    ];
+    function switchDM(i, btn) {
+      document.querySelectorAll('#dm-picker button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('dm-base').textContent = DMS[i].base;
+      document.getElementById('dm-tuned').textContent = DMS[i].tuned;
+    }
+  </script>
 </body>
 </html>
