@@ -4,6 +4,8 @@
 
 This repo covers 10+ fine-tuning techniques (LoRA, DoRA, QLoRA, DPO, Distillation, and more) with 20 hands-on Jupyter notebooks, fun & novel industry use cases, and an interactive GitHub Pages site.
 
+**Live site**: [kumarjit-pathak.github.io/finetuning-slm](https://kumarjit-pathak.github.io/finetuning-slm/)
+
 ---
 
 ## Quick Start
@@ -213,9 +215,55 @@ Full dependency list in [`pyproject.toml`](pyproject.toml).
 
 ---
 
+## Notebooks
+
+| # | Notebook | Technique | Track |
+|---|---|---|---|
+| 00 | [Environment Setup](notebooks/00_environment_setup.ipynb) | PyTorch, MPS/CUDA verification, benchmarks | Beginner |
+| 01 | [Dataset Design & Data Prep](notebooks/01_dataset_design_and_data_prep.ipynb) | Tokenizers, chat templates, quality checks | Beginner |
+| 02 | [Full Fine-Tuning](notebooks/02_full_finetuning.ipynb) | All-parameter training on SmolLM2-135M | Beginner |
+| 03 | [Feature Extraction](notebooks/03_feature_extraction_linear_probing.ipynb) | Frozen base + classification head (SST-2) | Beginner |
+| 04 | [LoRA & DoRA](notebooks/04_lora_and_dora_finetuning.ipynb) | Low-rank adapters, weight decomposition | Beginner |
+| 05 | [QLoRA](notebooks/05_qlora_finetuning.ipynb) | 4-bit quantized LoRA on Qwen2.5-1.5B | Intermediate |
+| 06 | [Prompt Tuning](notebooks/06_prompt_tuning.ipynb) | Learnable soft prompt tokens | Intermediate |
+| 07 | [Prefix Tuning](notebooks/07_prefix_tuning.ipynb) | Layer-wise prefix injection | Intermediate |
+| 08 | [DPO Alignment](notebooks/08_dpo_alignment.ipynb) | Direct Preference Optimization | Intermediate |
+| 09 | [Knowledge Distillation](notebooks/09_knowledge_distillation.ipynb) | Teacher-student training | Intermediate |
+| 10 | [Model Merging](notebooks/10_model_merging.ipynb) | SLERP, TIES, DARE | Intermediate |
+| 11 | [Failure Points & Debugging](notebooks/11_failure_points_and_debugging.ipynb) | Common pitfalls with training curves | Intermediate |
+| 12 | [Responsible Fine-Tuning](notebooks/12_responsible_safe_finetuning.ipynb) | Safety guardrails, red-teaming | Intermediate |
+| 13 | [Evaluation & Benchmarking](notebooks/13_evaluation_theory_and_benchmarking.ipynb) | ROUGE, BERTScore, ID vs OOD | Intermediate |
+| 14 | [Shakespearean Insult Generator](notebooks/14_fun_shakespearean_insult_generator.ipynb) | Style transfer use case | Advanced |
+| 15 | [Code Roast Reviewer](notebooks/15_fun_code_roast_reviewer.ipynb) | Code critique use case | Advanced |
+| 16 | [AI Dungeon Master](notebooks/16_fun_dungeon_master.ipynb) | Narration via SFT + DPO | Advanced |
+| 17 | [Agentic Tool Calling](notebooks/17_industry_agentic_tool_calling.ipynb) | JSON tool-call fine-tuning | Advanced |
+| 18 | [Clinical Summarizer](notebooks/18_industry_privacy_preserving_clinical_summarizer.ipynb) | Privacy-preserving medical NLP | Advanced |
+| 19 | [Apple Silicon Guide](notebooks/19_apple_silicon_optimization_guide.ipynb) | MPS vs MLX benchmarks, optimization | Advanced |
+
+---
+
 ## Project Structure
 
-See [`slm-finetuning-plan.md`](slm-finetuning-plan.md) for the full implementation plan.
+```
+finetuning-slm/
+├── notebooks/          # 20 Jupyter notebooks (00-19)
+├── src/                # Reusable Python utilities
+│   ├── data_utils.py       # Dataset loading, chat templates, quality checks
+│   ├── training_utils.py   # Device setup, training args, callbacks
+│   ├── evaluation_utils.py # ROUGE, BERTScore, perplexity, JSON validity
+│   ├── safety_utils.py     # Red-team prompts, guardrail testing
+│   ├── visualization.py    # Training curves, comparison charts
+│   └── apple_silicon.py    # MPS utilities, memory monitoring
+├── configs/            # YAML training configs (LoRA, QLoRA, DPO, etc.)
+├── data/               # Dataset documentation (data loaded from HF Hub)
+├── scripts/            # download_models.py (pre-cache for offline use)
+├── docs/               # GitHub Pages site (10 HTML pages + assets)
+│   ├── css/                # Design system + print styles
+│   ├── js/                 # Dark mode, tabs, search, interactivity
+│   └── images/             # Custom SVGs + notebook result PNGs
+├── setup.sh            # One-command environment setup
+└── pyproject.toml      # Dependencies and project metadata
+```
 
 ---
 
