@@ -43,3 +43,8 @@ uv.lock
 
 # Agents
 .github/agents/
+
+# Internal docs
+AGENTS.md
+slm-finetuning-plan.md
+understanding.md
