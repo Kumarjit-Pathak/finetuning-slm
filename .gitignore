@@ -37,3 +37,9 @@ Thumbs.db
 
 # uv
 uv.lock
+
+# Copilot
+.copilot/
+
+# Agents
+.github/agents/
