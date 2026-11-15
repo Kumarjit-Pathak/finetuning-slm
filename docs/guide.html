@@ -95,7 +95,8 @@
       text-align: center;
       padding-top: .1rem;
     }
-    .module-title { font-weight: 600; font-size: 1.05rem; }
+    .module-title { font-weight: 600; font-size: 1.05rem; text-decoration: none; color: inherit; }
+    a.module-title:hover { color: var(--color-primary); text-decoration: underline; }
     .module-desc { font-size: .875rem; color: var(--color-text-muted); margin-top: .15rem; }
     .module-meta {
       display: flex;
@@ -272,7 +273,7 @@
         <div class="module" data-progress-item="nb00">
           <div class="module-number">00</div>
           <div>
-            <div class="module-title">Environment setup</div>
+            <a class="module-title" href="https://github.com/Kumarjit-Pathak/finetuning-slm/blob/main/notebooks/00_environment_setup.ipynb" target="_blank" rel="noopener">Environment setup</a>
             <div class="module-desc">
               Get PyTorch, transformers, peft, and trl playing nicely. Verify MPS or CUDA. About 20 minutes.
             </div>
@@ -289,7 +290,7 @@
         <div class="module" data-progress-item="nb01">
           <div class="module-number">01</div>
           <div>
-            <div class="module-title">Dataset design and data prep</div>
+            <a class="module-title" href="https://github.com/Kumarjit-Pathak/finetuning-slm/blob/main/notebooks/01_dataset_design_and_data_prep.ipynb" target="_blank" rel="noopener">Dataset design and data prep</a>
             <div class="module-desc">
               How to build a fine-tuning dataset that will not immediately embarrass you. Templates, chat
               formats, and the sacred rule of validation splits.
@@ -307,7 +308,7 @@
         <div class="module" data-progress-item="nb02">
           <div class="module-number">02</div>
           <div>
-            <div class="module-title">Full fine-tuning</div>
+            <a class="module-title" href="https://github.com/Kumarjit-Pathak/finetuning-slm/blob/main/notebooks/02_full_finetuning.ipynb" target="_blank" rel="noopener">Full fine-tuning</a>
             <div class="module-desc">
               The classical approach. All parameters trainable. Useful as a baseline and a memory
               cautionary tale.
@@ -325,7 +326,7 @@
         <div class="module" data-progress-item="nb03">
           <div class="module-number">03</div>
           <div>
-            <div class="module-title">Feature extraction and linear probing</div>
+            <a class="module-title" href="https://github.com/Kumarjit-Pathak/finetuning-slm/blob/main/notebooks/03_feature_extraction_linear_probing.ipynb" target="_blank" rel="noopener">Feature extraction and linear probing</a>
             <div class="module-desc">
               Freeze the base entirely. Train a classifier head on top. The cheapest way to test whether
               a base model already knows your task.
@@ -343,7 +344,7 @@
         <div class="module" data-progress-item="nb04">
           <div class="module-number">04</div>
           <div>
-            <div class="module-title">LoRA and DoRA</div>
+            <a class="module-title" href="https://github.com/Kumarjit-Pathak/finetuning-slm/blob/main/notebooks/04_lora_and_dora_finetuning.ipynb" target="_blank" rel="noopener">LoRA and DoRA</a>
             <div class="module-desc">
               Where the tutorial gets fun. Low-rank adapters, weight decomposition, and the trick that
               made fine-tuning cheap.
@@ -385,7 +386,7 @@
         <div class="module" data-progress-item="nb05">
           <div class="module-number">05</div>
           <div>
-            <div class="module-title">QLoRA</div>
+            <a class="module-title" href="https://github.com/Kumarjit-Pathak/finetuning-slm/blob/main/notebooks/05_qlora_finetuning.ipynb" target="_blank" rel="noopener">QLoRA</a>
             <div class="module-desc">
               LoRA on a 4-bit-quantized base. Fits 7B models in 6 GB of VRAM. Also introduces double
               quantization, which is exactly what it sounds like.
@@ -403,7 +404,7 @@
         <div class="module" data-progress-item="nb06">
           <div class="module-number">06</div>
           <div>
-            <div class="module-title">Prompt tuning</div>
+            <a class="module-title" href="https://github.com/Kumarjit-Pathak/finetuning-slm/blob/main/notebooks/06_prompt_tuning.ipynb" target="_blank" rel="noopener">Prompt tuning</a>
             <div class="module-desc">
               Learn a handful of virtual tokens that get prepended to your input. Tiny footprint. Works
               on narrow tasks.
@@ -421,7 +422,7 @@
         <div class="module" data-progress-item="nb07">
           <div class="module-number">07</div>
           <div>
-            <div class="module-title">Prefix tuning</div>
+            <a class="module-title" href="https://github.com/Kumarjit-Pathak/finetuning-slm/blob/main/notebooks/07_prefix_tuning.ipynb" target="_blank" rel="noopener">Prefix tuning</a>
             <div class="module-desc">
               Prompt tuning, but the prefix is injected at every layer. More expressive. Slightly more
               parameters. Still very cheap.
@@ -439,7 +440,7 @@
         <div class="module" data-progress-item="nb08">
           <div class="module-number">08</div>
           <div>
-            <div class="module-title">DPO — Direct Preference Optimization</div>
+            <a class="module-title" href="https://github.com/Kumarjit-Pathak/finetuning-slm/blob/main/notebooks/08_dpo_alignment.ipynb" target="_blank" rel="noopener">DPO — Direct Preference Optimization</a>
             <div class="module-desc">
               Alignment without a reward model. Feed the model chosen/rejected pairs. Loss below log 2
               means it has taste now.
@@ -457,7 +458,7 @@
         <div class="module" data-progress-item="nb09">
           <div class="module-number">09</div>
           <div>
-            <div class="module-title">Knowledge distillation</div>
+            <a class="module-title" href="https://github.com/Kumarjit-Pathak/finetuning-slm/blob/main/notebooks/09_knowledge_distillation.ipynb" target="_blank" rel="noopener">Knowledge distillation</a>
             <div class="module-desc">
               A large teacher model tutors a small student. The student learns to mimic. Cheaper
               inference, most of the quality.
@@ -475,7 +476,7 @@
         <div class="module" data-progress-item="nb10">
           <div class="module-number">10</div>
           <div>
-            <div class="module-title">Model merging</div>
+            <a class="module-title" href="https://github.com/Kumarjit-Pathak/finetuning-slm/blob/main/notebooks/10_model_merging.ipynb" target="_blank" rel="noopener">Model merging</a>
             <div class="module-desc">
               SLERP, TIES, DARE. Combine multiple fine-tuned models by averaging weights in clever ways.
               Zero extra training required.
@@ -493,7 +494,7 @@
         <div class="module" data-progress-item="nb11">
           <div class="module-number">11</div>
           <div>
-            <div class="module-title">Failure points and debugging</div>
+            <a class="module-title" href="https://github.com/Kumarjit-Pathak/finetuning-slm/blob/main/notebooks/11_failure_points_and_debugging.ipynb" target="_blank" rel="noopener">Failure points and debugging</a>
             <div class="module-desc">
               Every training run that lost its mind, with training curves. Loss going to NaN, catastrophic
               forgetting, mode collapse, and the gradient checkpointing gotcha that ate a whole afternoon.
@@ -511,7 +512,7 @@
         <div class="module" data-progress-item="nb12">
           <div class="module-number">12</div>
           <div>
-            <div class="module-title">Responsible and safe fine-tuning</div>
+            <a class="module-title" href="https://github.com/Kumarjit-Pathak/finetuning-slm/blob/main/notebooks/12_responsible_safe_finetuning.ipynb" target="_blank" rel="noopener">Responsible and safe fine-tuning</a>
             <div class="module-desc">
               How fine-tuning erodes safety guardrails and how to put them back. Red-teaming, refusal
               training, and the paperwork that keeps you employed.
@@ -529,7 +530,7 @@
         <div class="module" data-progress-item="nb13">
           <div class="module-number">13</div>
           <div>
-            <div class="module-title">Evaluation theory and benchmarking</div>
+            <a class="module-title" href="https://github.com/Kumarjit-Pathak/finetuning-slm/blob/main/notebooks/13_evaluation_theory_and_benchmarking.ipynb" target="_blank" rel="noopener">Evaluation theory and benchmarking</a>
             <div class="module-desc">
               ID vs OOD, model-as-judge, and how to compare ten techniques on the same evaluation set
               without lying to yourself.
@@ -571,7 +572,7 @@
         <div class="module" data-progress-item="nb14">
           <div class="module-number">14</div>
           <div>
-            <div class="module-title">Fun — Shakespearean insult generator</div>
+            <a class="module-title" href="https://github.com/Kumarjit-Pathak/finetuning-slm/blob/main/notebooks/14_fun_shakespearean_insult_generator.ipynb" target="_blank" rel="noopener">Fun — Shakespearean insult generator</a>
             <div class="module-desc">
               A style-transfer experiment that documents the 135M capacity wall. Some outputs are
               genuinely Elizabethan. Some are not.
@@ -589,7 +590,7 @@
         <div class="module" data-progress-item="nb15">
           <div class="module-number">15</div>
           <div>
-            <div class="module-title">Fun — Code roast reviewer</div>
+            <a class="module-title" href="https://github.com/Kumarjit-Pathak/finetuning-slm/blob/main/notebooks/15_fun_code_roast_reviewer.ipynb" target="_blank" rel="noopener">Fun — Code roast reviewer</a>
             <div class="module-desc">
               The technical accuracy of code criticism doubles after fine-tuning. The Gordon Ramsay tone
               takes a bigger model. We report both.
@@ -607,7 +608,7 @@
         <div class="module" data-progress-item="nb16">
           <div class="module-number">16</div>
           <div>
-            <div class="module-title">Fun — AI Dungeon Master</div>
+            <a class="module-title" href="https://github.com/Kumarjit-Pathak/finetuning-slm/blob/main/notebooks/16_fun_dungeon_master.ipynb" target="_blank" rel="noopener">Fun — AI Dungeon Master</a>
             <div class="module-desc">
               Two-stage SFT then DPO to bias generation toward vivid narration. Includes a 4-turn game
               loop. Also a formal definition of what &ldquo;tension words&rdquo; means.
@@ -625,7 +626,7 @@
         <div class="module" data-progress-item="nb17">
           <div class="module-number">17</div>
           <div>
-            <div class="module-title">Industry — Agentic tool-calling SLM</div>
+            <a class="module-title" href="https://github.com/Kumarjit-Pathak/finetuning-slm/blob/main/notebooks/17_industry_agentic_tool_calling.ipynb" target="_blank" rel="noopener">Industry — Agentic tool-calling SLM</a>
             <div class="module-desc">
               Fine-tune a 135M model to emit structured JSON tool calls. From 10 percent JSON validity to
               95 percent. Roughly 30,000 times cheaper per call than GPT-4.
@@ -643,7 +644,7 @@
         <div class="module" data-progress-item="nb18">
           <div class="module-number">18</div>
           <div>
-            <div class="module-title">Industry — Privacy-preserving clinical summarizer</div>
+            <a class="module-title" href="https://github.com/Kumarjit-Pathak/finetuning-slm/blob/main/notebooks/18_industry_privacy_preserving_clinical_summarizer.ipynb" target="_blank" rel="noopener">Industry — Privacy-preserving clinical summarizer</a>
             <div class="module-desc">
               SFT for structure, DPO for anti-hallucination. Runs on-device. HIPAA-compatible by
               architecture, not by promise.
@@ -661,7 +662,7 @@
         <div class="module" data-progress-item="nb19">
           <div class="module-number">19</div>
           <div>
-            <div class="module-title">Apple Silicon optimization guide</div>
+            <a class="module-title" href="https://github.com/Kumarjit-Pathak/finetuning-slm/blob/main/notebooks/19_apple_silicon_optimization_guide.ipynb" target="_blank" rel="noopener">Apple Silicon optimization guide</a>
             <div class="module-desc">
               MPS internals, unified memory, MLX comparison. Measured on M4 Max. Honest about where cloud
               GPUs still win.
